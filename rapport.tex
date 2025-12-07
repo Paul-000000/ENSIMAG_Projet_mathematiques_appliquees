@@ -1,0 +1,172 @@
+%----------------------------------------------------------------------------------------------------------
+% 	The following Latex code is given as an example and not The example
+%	of using Latex to write report, memoir or thesis. 
+%
+%	Please visit the wikibook : https://fr.wikibooks.org/wiki/LaTeX
+% 
+%----------------------------------------------------------------------------------------------------------
+
+\documentclass[11pt,a4paper]{article}
+
+% package
+%symbole math de l'American Mathematical Society (AMS)
+\usepackage{amsfonts,amssymb,amsmath,amsthm}
+%utiliser les regles de typographie francaise
+\usepackage[french]{babel}
+% accents 
+%\usepackage[applemac]{inputenc} %MAC encoding
+\usepackage[utf8]{inputenc} %UNIX encoding
+%\usepackage[ansinew]{inputenc} %WINDOWS encoding
+
+%graphique
+\usepackage{color, graphicx, wrapfig, subcaption}
+
+%citation
+\usepackage{natbib}
+
+%reference hypertext
+\usepackage[pagebackref=false, hyperfootnotes=false]{hyperref}
+
+%pour les url
+\usepackage{url}
+\urlstyle{sf}
+
+%plusieur colonne dans tableau
+% \multicolumn{nomb_col}{alignement}{contenu}
+% \multirow{nomb_ligne}{largeur}{contenu}
+\usepackage{multirow, multicol}
+
+
+% layout
+\usepackage[left=2cm, right=2cm, top=2.5cm, bottom=2.5cm]{geometry}
+
+
+
+
+% les macros generales - exemples
+
+%layout
+\newcommand{\HRuleTop}{\noindent\rule{\linewidth}{.5pt}}
+\newcommand{\HRuleBottom}{\rule{\linewidth}{.5pt}}
+\newcommand{\ligne}{\rule[2mm]{.3\textwidth}{0,5mm}\\}
+\newcommand{\myskip}{\vspace{\parskip}}
+\newcommand{\blank}{ \clearpage{\pagestyle{empty}\cleardoublepage} }
+
+%sets
+\newcommand{\R}{\mathbb R}
+\newcommand{\N}{\mathbb N}
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\X}{\mathbb X}
+\newcommand{\C}{\mathbb C}
+\newcommand{\K}{\mathbb K}
+
+\newcommand{\calN}{\mathcal N}
+\newcommand{\calM}{\mathcal M}
+\newcommand{\calA}{\mathcal A}
+\newcommand{\calB}{\mathcal B}
+\newcommand{\calE}{\mathcal E}
+\newcommand{\calF}{\mathcal F}
+\newcommand{\calL}{\mathcal L}
+\newcommand{\calG}{\mathcal G}
+\newcommand{\calP}{\mathcal P}
+\newcommand{\calS}{\mathcal S}
+\newcommand{\calU}{\mathcal U}
+\newcommand{\barA}{\overline A}
+\newcommand{\barV}{\overline V}
+
+\newcommand{\bA}{\boldsymbol{A}}
+\newcommand{\bB}{\boldsymbol{B}}
+\newcommand{\bC}{\boldsymbol{C}}
+\newcommand{\bD}{\boldsymbol{D}}
+\newcommand{\bH}{\boldsymbol{H}}
+\newcommand{\bL}{\boldsymbol{L}}
+\newcommand{\bM}{\boldsymbol{M}}
+\newcommand{\bN}{\boldsymbol{N}}
+\newcommand{\bP}{\boldsymbol{P}}
+\newcommand{\bQ}{\boldsymbol{Q}}
+\newcommand{\bR}{\boldsymbol{R}}
+\newcommand{\bT}{\boldsymbol{T}}
+\newcommand{\bU}{\boldsymbol{U}}
+\newcommand{\bX}{\boldsymbol{X}}
+
+\newcommand{\bzero}{\boldsymbol{0}}
+\newcommand{\be}{\boldsymbol{e}}
+\newcommand{\bff}{\boldsymbol{f}}
+\newcommand{\bI}{\boldsymbol{I}}
+\newcommand{\bx}{\boldsymbol{x}}
+\newcommand{\by}{\boldsymbol{y}}
+\newcommand{\bz}{\boldsymbol{z}}
+\newcommand{\bt}{\boldsymbol{t}}
+
+
+%text style
+\newcommand{\pkg}{\textbf}
+\newcommand{\sigle}{\textsc}
+\newcommand{\code}{\texttt}
+\newcommand{\soft}{\textsf}
+\newcommand{\expo}{\textsuperscript}
+
+%_____________ avec couleur _____________ 
+\newcommand{\cyan}[1]{{\color{cyan}#1}}
+\newcommand{\red}[1]{{\color{red}#1}}
+\newcommand{\blue}[1]{{\color{blue}#1}}
+
+
+
+%math operator
+\newcommand{\abs}[1]{\left\lvert#1\right\overt}
+\newcommand{\bigo}[1]{\mathcal O \hskip -0,2em \left(#1\right)}
+\DeclareMathOperator{\Ker}{Ker}
+\newcommand{\littleo}[1]{o\hskip -0,2em \left(#1\right)}
+\DeclareMathOperator{\mat}{mat}
+\DeclareMathOperator{\rg}{rg}
+\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\Sp}{Sp}
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\vect}{vect}
+
+
+\title{NOM DU PROJET A REMPLIR}
+\author{NOM DES ETUDIANT(E)S}
+
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+\red{A faire}
+
+ma super équation
+$$
+\int_0^1xdx=\frac12.
+$$
+
+
+
+\section{Une section} \label{monlabel}
+
+
+
+
+\section{Conclusions}\label{conclusions}
+
+exemple de citation de citation \cite{doe} vers une référence.
+
+Une vraie citation : \cite[Chap. 4]{nist10}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Bibiliography.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bibliographystyle{agsm}  
+\clearpage
+\phantomsection %add a phantom section for the hyperreference linkg
+\addcontentsline{toc}{section}{Bibliographie} %add a chapter to the TOC
+\bibliography{Ref}   %must have a file named Ref.bib
+
+\end{document}
