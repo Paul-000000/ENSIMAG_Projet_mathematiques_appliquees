@@ -25,4 +25,4 @@ def segmentation_chan_vese(image: MaskedArray, sigma=2, mu=0.07, lambda1=1, lamb
 if __name__ == "__main__": # tests
 
     image = recuperer_images(False, 5, ['20210816'])[0]
-    comparaison_OASIS_segmentation(image, segmentation_chan_vese(image))
+    test_segmentation(image, segmentation_chan_vese, "image OASIS du 16/08/2021","Segmentation Chan-Vese")
