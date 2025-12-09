@@ -1,13 +1,14 @@
 import os, rasterio, matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy import ndarray
 from numpy.ma import MaskedArray
 
 
-def recuperer_matrices(mean_monthly : bool = False, zone : int = 2, selected_dates : list[str] = ['20210816', '20210828']) -> list[tuple[str, MaskedArray]]:
+def recuperer_images(mean_monthly : bool = False, zone : int = 2, selected_dates : list[str] = ['20210816', '20210828']) -> list[MaskedArray]:
     
     dir = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
-    dates_matrices = []
+    images = []
 
     for date in selected_dates:
 
@@ -16,15 +17,12 @@ def recuperer_matrices(mean_monthly : bool = False, zone : int = 2, selected_dat
             if date in file:
 
                 full_path = os.path.join(dir, file)
-                dates_matrices.append((date, recuperer_matrice(full_path)))
+                images.append(recuperer_image(full_path))
                 break
 
-    # Trie les résultats par ordre de date
-    dates_matrices.sort(key=lambda x: x[0])
+    return images
 
-    return dates_matrices
-
-def recuperer_matrice(path : str) -> MaskedArray:
+def recuperer_image(path : str) -> MaskedArray:
     
     with rasterio.open(path) as src:
 
@@ -41,7 +39,7 @@ def recuperer_matrice(path : str) -> MaskedArray:
 
     return data
 
-def comparaison_OASIS_segmentation(image_oasis : MaskedArray, matrice_segmentee) -> None:
+def comparaison_OASIS_segmentation(image_oasis : MaskedArray, image_segmentee : ndarray) -> None:
     
     _, plots = plt.subplots(1, 2, figsize=(12, 6))
 
@@ -54,7 +52,7 @@ def comparaison_OASIS_segmentation(image_oasis : MaskedArray, matrice_segmentee)
     plot_oasis.set_xlabel('Longitude')
     plot_oasis.set_ylabel('Latitude')
 
-    plot_segmente.imshow(matrice_segmentee, cmap='gray', origin='upper')
+    plot_segmente.imshow(image_segmentee, cmap='gray', origin='upper')
     plot_segmente.set_title("segmentation effectuée")
     plot_segmente.set_xlabel('Longitude')
     plot_segmente.set_ylabel('Latitude')
@@ -63,13 +61,13 @@ def comparaison_OASIS_segmentation(image_oasis : MaskedArray, matrice_segmentee)
     plt.show()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": # tests
 
-    date, matrice = recuperer_matrices()[1]
+    images = recuperer_images()
 
-    matrice = recuperer_matrice("./Data/Test_zone2/OASIS/s1a_fusion_ASC_161_20161228_oasis_VV_Offset55_Test_zone2.tif")
+    image = recuperer_image("./Data/Test_zone2/OASIS/s1a_fusion_ASC_161_20161228_oasis_VV_Offset55_Test_zone2.tif")
     
-    comparaison_OASIS_segmentation(matrice, matrice)
+    comparaison_OASIS_segmentation(image, image)
 
 
 

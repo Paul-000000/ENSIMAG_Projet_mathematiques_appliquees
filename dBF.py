@@ -2,9 +2,8 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
 import numpy as np
 from skimage.exposure import rescale_intensity
-# La méthode de seuillage fixe ne nécessite pas d'importation spéciale de segmentation
-# On réutilise les utilitaires de chargement des données
-from manipulation_matrices_tif import recuperer_matrices 
+from manipulation_images_tif import *
+
 
 # ==================== PARAMÈTRE DU SEUIL À CALIBRER ====================
 # Le seuil pour l'eau (sur images SAR en dB) doit être très bas.
@@ -13,9 +12,7 @@ from manipulation_matrices_tif import recuperer_matrices
 SEUIL_FIXE_DB = 0.2
 # ======================================================================
 
-# --- 1. Préparation des données ---
-# On suppose que recuperer_matrices()[0][1] contient les valeurs en dB (Sentinel-1)
-image = recuperer_matrices()[0][1]
+image = recuperer_images(False, 2, ['20210816'])[0]
 image_gray = image.astype(float)
 image_normalisee = None # Sera calculée plus tard pour l'affichage
 
@@ -40,7 +37,7 @@ image_normalisee = rescale_intensity(image_filtered,
                                      out_range=(0, 1))
 
 # --- 4. Affichage de l'image d'entrée et de la segmentation ---
-fig, axes = plt.subplots(1, 4, figsize=(16, 6)) # Agrandissement de la figure pour meilleure clarté
+fig, axes = plt.subplots(1, 4, figsize=(16, 5)) # Agrandissement de la figure pour meilleure clarté
 
 # Figure 1: Image d'entrée originale (dB)
 ax = axes[0]
