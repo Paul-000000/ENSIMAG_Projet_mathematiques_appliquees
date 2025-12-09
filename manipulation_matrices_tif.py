@@ -1,93 +1,75 @@
-import os, glob, rasterio, matplotlib
+import os, rasterio, matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.ma import MaskedArray
 
-# chemin vers moyennes mensuelles: Test_zone1/STATS/MeanMonthly/
-# chemin vers oasis non moyennés (tous les 6 ou 12 jours): Test_zone1/OASIS
 
-data_dir = './Data/Test_zone2/OASIS/'
-shp_dir = './Shapefiles/'                                
-var_name = 'oasis'                            
-cmap4 = matplotlib.colors.LinearSegmentedColormap.from_list('mycmap', ['white','gray','blue', 'magenta','red'])
-
-def recuperer_matrices(year : int = 2021, selected_dates : list[str] = ['20210816', '20210828'], data_dir : str = './Data/Test_zone2/OASIS/',zone : str = 'Test_zone2.shp') -> list[tuple[str, MaskedArray]]:
+def recuperer_matrices(mean_monthly : bool = False, zone : int = 2, selected_dates : list[str] = ['20210816', '20210828']) -> list[tuple[str, MaskedArray]]:
     
-    file_pattern = f'*_{year}*.tif' 
-    tif_files = sorted(glob.glob(os.path.join(data_dir, file_pattern)))
+    dir = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
+    dates_matrices = []
 
-    # Dictionnaire : date (str AAAAMMJJ) → données + métadonnées
-    data_dict = {}
-    meta = None
+    for date in selected_dates:
 
-    for tif_file in tif_files:
+        for file in os.listdir(dir):
 
-        filename = os.path.basename(tif_file)
-        # Extraction de la date au format AAAAMMJJ
+            if date in file:
 
-        parts = filename.split('_')
-        date_str = None
-
-        for p in parts:
-            if len(p) == 8 and p.isdigit() and p.startswith(str(year)):
-                date_str = p
+                full_path = os.path.join(dir, file)
+                dates_matrices.append((date, recuperer_matrice(full_path)))
                 break
-        if date_str is None:
-            print(f"Date non trouvée dans {filename} → ignoré")
-            continue
 
-        with rasterio.open(tif_file) as src:
-            band = src.read(1)                     # les fichiers contiennent une seule variable
-            nodata = src.nodata
-            
-            # Gestion des NoData / NaN
-            if nodata is not None:
-                mask = band == nodata
-            else:
-                mask = np.isnan(band)
-            data = np.ma.masked_where(mask, band)
+    # Trie les résultats par ordre de date
+    dates_matrices.sort(key=lambda x: x[0])
 
-            data_dict[date_str] = {
-                'data': data,
-                'transform': src.transform,
-                'crs': src.crs
-            }
-            if meta is None:
-                meta = src.meta.copy()
+    return dates_matrices
 
-    nom_matrice = []
-
-    for date_str in selected_dates:
-
-        if date_str in data_dict:
-            nom_matrice.append((date_str,data_dict[date_str]['data']))
-
-    return nom_matrice
-
-def afficher_oasis(titre : str, matrice : MaskedArray) -> None:
+def recuperer_matrice(path : str) -> MaskedArray:
     
-    plt.figure(figsize=(8, 8))
-    plt.imshow(matrice, cmap=cmap4, origin='upper')
-    plt.colorbar(label='Valeur')
-    plt.title(titre)
-    plt.xlabel('Longitude')
-    plt.ylabel('Latitude')
+    with rasterio.open(path) as src:
+
+        band = src.read(1)
+        nodata = src.nodata
+        
+        # Gestion des NoData / NaN
+        if nodata is not None:
+            mask = band == nodata
+        else:
+            mask = np.isnan(band)
+
+        data = np.ma.masked_where(mask, band)
+
+    return data
+
+def comparaison_OASIS_segmentation(image_oasis : MaskedArray, matrice_segmentee) -> None:
+    
+    _, plots = plt.subplots(1, 2, figsize=(12, 6))
+
+    plot_oasis = plots[0]
+    plot_segmente = plots[1]
+
+    im = plot_oasis.imshow(image_oasis, cmap=matplotlib.colors.LinearSegmentedColormap.from_list('mycmap', ['white','gray','blue', 'magenta','red']), origin='upper') # type: ignore
+    plt.colorbar(im, ax=plot_oasis)
+    plot_oasis.set_title("Image au format OASIS")
+    plot_oasis.set_xlabel('Longitude')
+    plot_oasis.set_ylabel('Latitude')
+
+    plot_segmente.imshow(matrice_segmentee, cmap='gray', origin='upper')
+    plot_segmente.set_title("segmentation effectuée")
+    plot_segmente.set_xlabel('Longitude')
+    plot_segmente.set_ylabel('Latitude')
+    
+    plt.tight_layout()
     plt.show()
 
-def afficher_segmentation(matrice) -> None:
+
+if __name__ == "__main__":
+
+    date, matrice = recuperer_matrices()[1]
+
+    matrice = recuperer_matrice("./Data/Test_zone2/OASIS/s1a_fusion_ASC_161_20161228_oasis_VV_Offset55_Test_zone2.tif")
     
-    plt.figure(figsize=(8, 8))
-    plt.imshow(matrice, cmap='gray', origin='upper')
-    plt.colorbar(label='Valeur')
-    plt.title("segmentation")
-    plt.xlabel('Longitude')
-    plt.ylabel('Latitude')
-    plt.show()
+    comparaison_OASIS_segmentation(matrice, matrice)
 
-"""
-date, matrice = recuperer_matrices()[0]
 
-afficher_oasis(date, matrice)
-#afficher_segmentation(matrice)
-"""
 
