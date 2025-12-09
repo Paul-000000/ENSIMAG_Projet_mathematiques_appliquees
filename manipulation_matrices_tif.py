@@ -1,8 +1,7 @@
-import os, glob, typing, rasterio, matplotlib
+import os, glob, rasterio, matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Any
-
+from numpy.ma import MaskedArray
 
 # chemin vers moyennes mensuelles: Test_zone1/STATS/MeanMonthly/
 # chemin vers oasis non moyennés (tous les 6 ou 12 jours): Test_zone1/OASIS
@@ -12,7 +11,7 @@ shp_dir = './Shapefiles/'
 var_name = 'oasis'                            
 cmap4 = matplotlib.colors.LinearSegmentedColormap.from_list('mycmap', ['white','gray','blue', 'magenta','red'])
 
-def recuperer_matrices(year : int = 2021, selected_dates : list[str] = ['20210816', '20210828'], data_dir : str = './Data/Test_zone2/OASIS/',zone : str = 'Test_zone2.shp') -> list[tuple[str, Any]]:
+def recuperer_matrices(year : int = 2021, selected_dates : list[str] = ['20210816', '20210828'], data_dir : str = './Data/Test_zone2/OASIS/',zone : str = 'Test_zone2.shp') -> list[tuple[str, MaskedArray]]:
     
     file_pattern = f'*_{year}*.tif' 
     tif_files = sorted(glob.glob(os.path.join(data_dir, file_pattern)))
@@ -61,12 +60,15 @@ def recuperer_matrices(year : int = 2021, selected_dates : list[str] = ['2021081
     for date_str in selected_dates:
 
         if date_str in data_dict:
-            nom_matrice.append((date_str,data_dict[date_str]['data']))
+
+            matrice = np.nan_to_num(data_dict[date_str]['data'], nan=0)
+            nom_matrice.append((date_str,matrice))
 
     return nom_matrice
 
-def afficher_matrice(date : str, matrice : Any) -> None:
+def afficher_matrice(date : str, matrice : MaskedArray) -> None:
     
+    matrice = np.rot90(matrice)
     plt.figure(figsize=(10, 6))
     plt.imshow(matrice, cmap=cmap4, origin='upper')
     plt.colorbar(label='Valeur')
@@ -75,4 +77,11 @@ def afficher_matrice(date : str, matrice : Any) -> None:
     plt.ylabel('Latitude')
     plt.show()
 
-    
+"""
+matrices = recuperer_matrices()
+
+print(matrices)
+
+for date, matrice in matrices:
+    afficher_matrice(date, matrice)
+"""
