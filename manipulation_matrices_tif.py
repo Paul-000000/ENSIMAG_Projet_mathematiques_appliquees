@@ -60,28 +60,34 @@ def recuperer_matrices(year : int = 2021, selected_dates : list[str] = ['2021081
     for date_str in selected_dates:
 
         if date_str in data_dict:
-
-            matrice = np.nan_to_num(data_dict[date_str]['data'], nan=0)
-            nom_matrice.append((date_str,matrice))
+            nom_matrice.append((date_str,data_dict[date_str]['data']))
 
     return nom_matrice
 
-def afficher_matrice(date : str, matrice : MaskedArray) -> None:
+def afficher_oasis(titre : str, matrice : MaskedArray) -> None:
     
-    matrice = np.rot90(matrice)
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(8, 8))
     plt.imshow(matrice, cmap=cmap4, origin='upper')
     plt.colorbar(label='Valeur')
-    plt.title(f'Matrice pour la date {date}')
+    plt.title(titre)
+    plt.xlabel('Longitude')
+    plt.ylabel('Latitude')
+    plt.show()
+
+def afficher_segmentation(matrice) -> None:
+    
+    plt.figure(figsize=(8, 8))
+    plt.imshow(matrice, cmap='gray', origin='upper')
+    plt.colorbar(label='Valeur')
+    plt.title("segmentation")
     plt.xlabel('Longitude')
     plt.ylabel('Latitude')
     plt.show()
 
 """
-matrices = recuperer_matrices()
+date, matrice = recuperer_matrices()[0]
 
-print(matrices)
-
-for date, matrice in matrices:
-    afficher_matrice(date, matrice)
+afficher_oasis(date, matrice)
+#afficher_segmentation(matrice)
 """
+
