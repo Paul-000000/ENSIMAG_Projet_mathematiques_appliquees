@@ -48,6 +48,7 @@ def recuperer_image(path : str) -> MaskedArray:
 
     return data
 
+
 def test_segmentation(image : MaskedArray, fonction_segmentation : Callable[[MaskedArray], ndarray], titre_oasis : str = "Image au format OASIS", titre_segmente : str = "Segmentation de l'image") -> None:
 
     start = time.time()
@@ -144,14 +145,35 @@ def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray],
     plt.show()
 
 
+def test_correlation(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float:
+
+    arr1 = np.asarray(image_segmentee_1).ravel()
+    arr2 = np.asarray(image_segmentee_2).ravel()
+
+    mask = ~np.isnan(arr1) & ~np.isnan(arr2)
+
+    arr1 = arr1[mask]
+    arr2 = arr2[mask]
+
+    if len(arr1) == 0:
+        return float('nan')
+
+    return np.corrcoef(arr1, arr2)[0, 1]
+
+
 if __name__ == "__main__": # tests
 
-    images = recuperer_images()
+    def segmentation_test(image : MaskedArray) -> ndarray:
 
+        return np.asarray(image)
+
+    #images = recuperer_images()
     image = recuperer_image("./Data/Test_zone6/OASIS/s1a_fusion_ASC_161_20210118_oasis_VV_Offset55_Test_zone6.tif")
     
-    test_segmentation(image, lambda image : image)
-    tests_segmentation(lambda image : image)
+    print(test_correlation(image, image))
+
+    test_segmentation(image, segmentation_test)
+    tests_segmentation(segmentation_test)
 
 
 
