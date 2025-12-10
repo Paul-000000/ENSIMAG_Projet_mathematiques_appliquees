@@ -18,7 +18,7 @@ def recuperer_images(mean_monthly : bool = False, zone : int = 2, selected_dates
 
         for file in os.listdir(dir):
 
-            if date in file:
+            if (date[:6] if mean_monthly else date) in file:
 
                 full_path = os.path.join(dir, file)
                 images.append(recuperer_image(full_path))
