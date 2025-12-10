@@ -77,18 +77,22 @@ def test_segmentation(image : MaskedArray, fonction_segmentation : Callable[[Mas
     plt.tight_layout()
     plt.show()
 
-
 def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray], annee : int = 2021, mean_monthly : bool = False) -> None:
 
-    _, plots = plt.subplots(16,12,figsize=(12, 8))
+    fig, plots = plt.subplots(16,12,figsize=(12, 8))
     
+    plt.suptitle(f"Segmentation des Images pour l'Année {annee}", fontsize=16, fontweight='bold')
+    temps_execution = []
+
     for zone in range(1,9):
 
+        print(f"segmentation Zone {zone}/8 ", end="")
         dir = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
 
         for mois in range(1,13):
 
             date = f"{annee}{mois:02d}"
+            print(f".", end="")
 
             for file in os.listdir(dir):
 
@@ -97,20 +101,32 @@ def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray],
                     full_path = os.path.join(dir, file)
                     image = recuperer_image(full_path)
 
+                    start = time.time()
                     image_segmentee = fonction_segmentation(image)
+                    end = time.time()
+                    temps_execution.append(end-start)
 
                     plot_oasis = plots[(zone-1) * 2, mois-1]
                     plot_segmente = plots[(zone-1) * 2 + 1, mois-1]
 
                     plot_oasis.imshow(image, cmap=matplotlib.colors.LinearSegmentedColormap.from_list('mycmap', ['white','gray','blue', 'magenta','red']), origin='upper')
                     plot_oasis.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
-
+                
                     plot_segmente.imshow(image_segmentee, cmap='gray', origin='upper')
                     plot_segmente.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
 
                     break
+        
+        print()
+
+    fig.text(0.02, 0.5, 'Zone', ha='center', va='center', rotation='vertical', fontsize=12, fontweight='bold')
+    fig.text(0.5, 0.95, 'Mois', ha='center', va='center', fontsize=12, fontweight='bold')
+
+    print(f"temps d'éxécution moyen de {fonction_segmentation.__name__} : {round(sum(temps_execution) / len(temps_execution),3)}")
+    print(f"temps d'éxécution total de {fonction_segmentation.__name__} : {round(sum(temps_execution),3)}")
 
     plt.tight_layout()
+    plt.savefig(f"{fonction_segmentation.__name__}_{annee}.png", dpi=500)
     plt.show()
 
 
