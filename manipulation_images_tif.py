@@ -6,14 +6,23 @@ from numpy import ndarray
 from numpy.ma import MaskedArray
 
 
+
 def recuperer_images(mean_monthly : bool = False, zone : int = 2, selected_dates : list[str] = ['20210816', '20210828']) -> list[MaskedArray]:
+    
+    if not (8 >= zone >=1):
+        return images
     
     dir = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
     images = []
 
-    if not (8 >= zone >=1):
-        return images
+    if mean_monthly:
 
+        date_months=set()
+        for date in selected_dates:
+            date_months.add(date[:6])
+
+        selected_dates=date_months
+        
     for date in selected_dates:
 
         for file in os.listdir(dir):
