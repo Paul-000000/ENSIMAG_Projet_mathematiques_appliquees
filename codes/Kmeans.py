@@ -7,6 +7,7 @@ from manipulation_images_tif import *
 
 
 def segmentation_kmeans_features(image, patch=5, n_clusters=2):
+    
     img = np.nan_to_num(image, nan=np.nanmean(image))
     img = img.astype(float)
     
@@ -23,8 +24,9 @@ def segmentation_kmeans_features(image, patch=5, n_clusters=2):
     labels = kmeans.labels_.reshape(H, W)
 
     return labels
+
 if __name__ == "__main__": # tests
 
     image = recuperer_images(False, 5, ['20210106'])[0]
-    test_segmentation(image, segmentation_kmeans_features, "image OASIS du 16/08/2021","Segmentation Kmeans")
-    #tests_segmentation(fonction_segmentation=segmentation_kmeans_features)
+    #test_segmentation(image, segmentation_kmeans_features, "image OASIS du 16/08/2021","Segmentation Kmeans")
+    tests_segmentation(fonction_segmentation=segmentation_kmeans_features)

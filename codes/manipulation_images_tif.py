@@ -140,7 +140,7 @@ def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray],
     print("affichage et sauvegarde du graphique")
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plt.savefig(f"{fonction_segmentation.__name__}_{annee}.png", dpi=resolution)
+    plt.savefig(f"resultats_tests/{fonction_segmentation.__name__}_{annee}.png", dpi=resolution)
     plt.show()
 
 
