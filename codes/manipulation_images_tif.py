@@ -5,6 +5,7 @@ import numpy as np
 from typing import Callable
 from numpy import ndarray
 from numpy.ma import MaskedArray
+from skimage.metrics import structural_similarity
 
 
 INDICATEUR = matplotlib.colors.LinearSegmentedColormap.from_list('mycmap', ['white','gray','blue', 'magenta','red'])
@@ -152,6 +153,13 @@ def distance_hamming(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -
     
     return np.sum(image_segmentee_1 != image_segmentee_2) / (image_segmentee_1.shape[0] * image_segmentee_2.shape[1])
 
+def difference_aire(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 0 signifie parfait
+    
+    aire_1 = np.sum(image_segmentee_1)
+    aire_2 = np.sum(image_segmentee_2)
+
+    return abs(aire_1 - aire_2) / max(aire_1, aire_2)
+
 def test_correlation(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
 
     arr1 = np.asarray(image_segmentee_1).ravel()
@@ -167,33 +175,101 @@ def test_correlation(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -
 
     return np.corrcoef(arr1, arr2)[0, 1]
 
-def difference(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
-    pass
-
 def similarite_structurelle(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
-    pass
+    
+    score, _ = structural_similarity(image_segmentee_1, image_segmentee_2, data_range=1,full=True)
+    return score
 
 def vraie_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
-    pass
+    
+    ref = np.asarray(image_segmentee_1).ravel()
+    seg = np.asarray(image_segmentee_2).ravel()
+
+    if ref.shape != seg.shape:
+        raise ValueError("Les deux images doivent avoir la même taille")
+
+    mask = ~np.isnan(ref) & ~np.isnan(seg)
+    ref = ref[mask]
+    seg = seg[mask]
+
+    if ref.size == 0:
+        return float('nan')
+
+    ref_pos = ref > 0
+    seg_pos = seg > 0
+
+    TP = np.sum(ref_pos & seg_pos)   # vrais positifs
+    FN = np.sum(ref_pos & ~seg_pos)  # faux négatifs
+
+    denom = TP + FN
+    if denom == 0:
+        return float('nan')
+
+    return float(TP / denom)
 
 def fausse_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
-    pass
+    
+    ref = np.asarray(image_segmentee_1).ravel()
+    seg = np.asarray(image_segmentee_2).ravel()
 
+    if ref.shape != seg.shape:
+        raise ValueError("Les deux images doivent avoir la même taille")
+
+    mask = ~np.isnan(ref) & ~np.isnan(seg)
+    ref = ref[mask]
+    seg = seg[mask]
+
+    if ref.size == 0:
+        return float('nan')
+
+    ref_pos = ref > 0
+    seg_pos = seg > 0
+
+    TN = np.sum(~ref_pos & ~seg_pos)  # vrais négatifs
+    FP = np.sum(~ref_pos & seg_pos)   # faux positifs
+
+    print(TN,FP)
+
+    denom = TN + FP
+    if denom == 0:
+        return float('nan')
+
+    # Spécificité = TN / (TN + FP), 1 = aucune fausse détection
+    return float(FP / denom)
+
+def print_tests(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray):
+
+    print(f"Distance de Hamming : {distance_hamming(image_segmentee_1, image_segmentee_2)}")
+    print(f"Différence d'aire : {difference_aire(image_segmentee_1, image_segmentee_2)}\n")
+
+    print(f"Corrélation : {test_correlation(image_segmentee_1, image_segmentee_2)}")
+    print(f"Similarité structurelle : {similarite_structurelle(image_segmentee_1, image_segmentee_2)}")
+    print(f"Vraie détection : {vraie_detection(image_segmentee_1, image_segmentee_2)}")
+    print(f"Fausse détection : {fausse_detection(image_segmentee_1, image_segmentee_2)}")
 
 
 if __name__ == "__main__": # tests
 
+
     def segmentation_test(image : MaskedArray) -> ndarray:
 
-        return np.asarray(image)
+        image_no_nan = image.filled(np.nan)
+        image_no_nan = np.nan_to_num(image_no_nan, nan=np.nanmean(image_no_nan))
+        
+        return image_no_nan
+
 
     #images = recuperer_images()
     image = recuperer_image("./Data/Test_zone6/OASIS/s1a_fusion_ASC_161_20210118_oasis_VV_Offset55_Test_zone6.tif")
-    
-    print(test_correlation(image, image))
+    image_segmentee = segmentation_test(image)
 
-    test_segmentation(image, segmentation_test)
-    tests_segmentation(segmentation_test)
+    print_tests(image_segmentee, image_segmentee)
+
+    #image = recuperer_image("./GroundTruth_DYN/Test_zone6/Var_202101.tif")
+    #image_segmentee = test_segmentation(image, segmentation_test)
+
+    #test_segmentation(image, segmentation_test)
+    #tests_segmentation(segmentation_test)
 
 
 
