@@ -5,3 +5,5 @@ StagesENSIMAG/
 optical_data/
 Shapefiles/
 Data/
+GroundTruth_optiques/
+GroundTruth_DYN/
