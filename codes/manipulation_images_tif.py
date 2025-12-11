@@ -11,6 +11,7 @@ INDICATEUR = matplotlib.colors.LinearSegmentedColormap.from_list('mycmap', ['whi
 INDICATEUR_BINAIRE = ListedColormap(['white', 'blue'])
 
 
+# récupération d'images au format tif
 def recuperer_images(mean_monthly : bool = False, zone : int = 2, selected_dates : list[str] = ['20210816', '20210828']) -> list[MaskedArray]:
     
     dir = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
@@ -49,6 +50,7 @@ def recuperer_image(path : str) -> MaskedArray:
     return data
 
 
+# affichage des tests
 def test_segmentation(image : MaskedArray, fonction_segmentation : Callable[[MaskedArray], ndarray], titre_oasis : str = "Image au format OASIS", titre_segmente : str = "Segmentation de l'image") -> None:
 
     start = time.time()
@@ -145,7 +147,12 @@ def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray],
     plt.show()
 
 
-def test_correlation(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float:
+# tests et indicateurs
+def distance_hamming(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 0 signifie parfait
+    
+    return np.sum(image_segmentee_1 != image_segmentee_2) / (image_segmentee_1.shape[0] * image_segmentee_2.shape[1])
+
+def test_correlation(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
 
     arr1 = np.asarray(image_segmentee_1).ravel()
     arr2 = np.asarray(image_segmentee_2).ravel()
@@ -159,6 +166,19 @@ def test_correlation(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -
         return float('nan')
 
     return np.corrcoef(arr1, arr2)[0, 1]
+
+def difference(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
+    pass
+
+def similarite_structurelle(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
+    pass
+
+def vraie_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
+    pass
+
+def fausse_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
+    pass
+
 
 
 if __name__ == "__main__": # tests
