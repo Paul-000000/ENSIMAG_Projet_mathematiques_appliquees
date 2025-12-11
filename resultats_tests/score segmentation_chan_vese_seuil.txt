@@ -1,0 +1,13 @@
+
+Scores moyens sur l'année 2021 :
+
+Temps d'éxécution moyen          : 2.279
+
+Distance de Hamming moyenne      : 0.267
+Différence d'aire moyenne        : 0.759
+Fausse détection moyenne         : 0.001
+    
+Vraie détection moyenne          : 0.236
+Score de précision moyen         : 0.733
+Corrélation moyenne              : 0.329
+Similarité structurelle moyenne  : 1.0

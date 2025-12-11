@@ -2,13 +2,14 @@ import os, rasterio, matplotlib, time, glob
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
-from typing import Callable, Dict
+from typing import Callable
 from numpy import ndarray
 from numpy.ma import MaskedArray
 from skimage.metrics import structural_similarity
 from sklearn.metrics import accuracy_score
 
 
+DOSSIER_SORTIE = "resultats_tests"
 INDICATEUR_OASIS = matplotlib.colors.LinearSegmentedColormap.from_list('mycmap', ['white','gray','blue', 'magenta','red'])
 INDICATEUR_BINAIRE = ListedColormap(['white', 'blue'])
 
@@ -17,17 +18,17 @@ INDICATEUR_BINAIRE = ListedColormap(['white', 'blue'])
 def recuperer_images(mean_monthly : bool = True, zone : int = 2, selected_dates : list[str] = ['20210816', '20210828']) -> list[tuple[MaskedArray, MaskedArray | None]]:
     
     dir = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
+    dir_mean_monthly = f"./GroundTruth_DYN/Test_zone{zone}/"
+
     images_refs = []
-
-    if mean_monthly :
-        
-        dir_mean_monthly = f"./GroundTruth_DYN/Test_zone{zone}/"
-
-        for i in range(len(selected_dates)) :
-            selected_dates[i] = selected_dates[i][:6]
 
     if not (8 >= zone >=1):
         return images_refs
+    
+    if mean_monthly :
+        
+        for i in range(len(selected_dates)) :
+            selected_dates[i] = selected_dates[i][:6]
 
     for date in selected_dates:
 
@@ -149,11 +150,11 @@ def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray],
 
         for mois in range(1,13):
             
+            print(f".", end="")
+
             chemin_image = None
             chemin_image_ref = None
             date = f"{annee}{mois:02d}"
-            print(f".", end="")
-
             chemin_image = premier_fichier_dossier(f"{dir}*{date}*.tif")
             
             if mean_monthly :
@@ -193,17 +194,19 @@ def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray],
     for mois in range(1,13):
         fig.text((mois / 12) * 0.98 -0.025, 0.93, f"{mois_annee[mois - 1]}", ha='center', va='center', fontsize=9, fontweight='bold')
 
-    print(f"temps d'éxécution moyen de {fonction_segmentation.__name__} : {round(sum(temps_execution) / len(temps_execution),3)} secondes")
-    print(f"temps d'éxécution total de {fonction_segmentation.__name__} : {round(sum(temps_execution),3)} secondes")
+    print(f"temps d'éxécution moyen de {fonction_segmentation.__name__} : {round(np.mean(temps_execution),3)} secondes")
     print("affichage et sauvegarde du graphique")
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plt.savefig(f"resultats_tests/{fonction_segmentation.__name__}_{annee}.png", dpi=resolution)
+    plt.savefig(f"{DOSSIER_SORTIE}/{fonction_segmentation.__name__}_{annee}.png", dpi=resolution)
     plt.show()
 
 
 # tests et scores
 def distance_hamming(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 0 signifie parfait
+    
+    if image_segmentee_1.shape != image_segmentee_2.shape:
+        return float('nan')
     
     return np.sum(image_segmentee_1 != image_segmentee_2) / (image_segmentee_1.shape[0] * image_segmentee_2.shape[1])
 
@@ -241,6 +244,9 @@ def fausse_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -
 
 def score_correlation(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
 
+    if image_segmentee_1.shape != image_segmentee_2.shape:
+        return float('nan')
+    
     arr1 = np.asarray(image_segmentee_1).ravel()
     arr2 = np.asarray(image_segmentee_2).ravel()
 
@@ -256,7 +262,7 @@ def score_correlation(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) 
 
 def similarite_structurelle(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
     
-    score, _ = structural_similarity(image_segmentee_1, image_segmentee_2, data_range=1,full=True)
+    score, _ = structural_similarity(image_segmentee_1, image_segmentee_2, data_range=1, full=True)
     return score
 
 def vraie_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
@@ -281,8 +287,12 @@ def vraie_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) ->
 
 def score_precision(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
 
+    if image_segmentee_1.shape != image_segmentee_2.shape:
+        return float('nan')
+    
     ref = (image_segmentee_1 > 0).astype(int).ravel()
     seg = (image_segmentee_2 > 0).astype(int).ravel()
+
     return accuracy_score(ref, seg)
 
 
@@ -294,111 +304,86 @@ def print_scores(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray):
     print(f"Différence d'aire : {round(difference_aire(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Fausse détection : {round(fausse_detection(image_segmentee_1, image_segmentee_2),3)}\n")
 
+    print(f"Vraie détection : {round(vraie_detection(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Score de précision : {round(score_precision(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Corrélation : {round(score_correlation(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Similarité structurelle : {round(similarite_structurelle(image_segmentee_1, image_segmentee_2),3)}")
-    print(f"Vraie détection : {round(vraie_detection(image_segmentee_1, image_segmentee_2),3)}")
     
-def moyen_score(fonction_segmentation : Callable[[MaskedArray], ndarray],annee : int = 2021,mean_monthly : bool = False,resolution : int = 500) -> Dict[str, float]:
-   
-
+def moyenne_scores(fonction_segmentation : Callable[[MaskedArray], ndarray], annee : int = 2021) -> None:
+    
+    temps_execution = []
+    
     hamming_vals = []
     diff_aire_vals = []
-    corr_vals = []
-    ssim_vals = []
-    vraie_vals = []
     fausse_vals = []
 
+    vraie_vals = []
+    accuracy_vals = []
+    corr_vals = []
+    ssim_vals = []
+
     for zone in range(1, 9):
-        dir_oasis = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
+
+        print(f"segmentation Zone {zone}/8 ", end="")
+
+        dir_oasis = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
         dir_gt = f'./GroundTruth_DYN/Test_zone{zone}/'
 
-
         for mois in range(1, 13):
+
+            print(f".", end="")
+
             date = f"{annee}{mois:02d}"
-
-            if not os.path.isdir(dir_oasis):
-                 continue
-            if not os.path.isdir(dir_gt):
-                 continue
-             
-            img_path = None
-            for file in os.listdir(dir_oasis):
-                if date in file:
-                    img_path = os.path.join(dir_oasis, file)
-                    break
-
-            if img_path is None:
-               
+            img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
+            
+            if img_path is None:               
                 continue
 
-           
-            gt_filename = f"Var_{date}.tif"
-            gt_path = os.path.join(dir_gt, gt_filename)
-
-            if not os.path.exists(gt_path):
+            gt_path = premier_fichier_dossier(f"{dir_gt}*{date}*.tif")
+            
+            if gt_path is None: 
                 continue
 
-            try:
-              
-                image_oasis = recuperer_image(img_path)
-                image_gt = recuperer_image(gt_path)
+            image_oasis = recuperer_image(img_path)
+            image_gt = recuperer_image(gt_path).astype(int)
 
-               
-                image_seg = fonction_segmentation(image_oasis)
+            start = time.time()
+            image_seg = fonction_segmentation(image_oasis)
+            end = time.time()
 
-                
-                img_ref = np.asarray(image_gt)
-                img_seg = np.asarray(image_seg)
+            temps_execution.append(end-start)
 
-               
-                if img_ref.shape != img_seg.shape:
-                   
-                    print(f"Taille différente pour zone {zone}, mois {mois} : GT {img_ref.shape}, SEG {img_seg.shape}")
-                    continue
+            hamming_vals.append(distance_hamming(image_seg, image_gt))
+            diff_aire_vals.append(difference_aire(image_seg, image_gt))
+            fausse_vals.append(fausse_detection(image_seg, image_gt))
 
-                h = distance_hamming(img_ref, img_seg)
-                da = difference_aire(img_ref, img_seg)
-                c = score_correlation(img_ref, img_seg)
-                s = similarite_structurelle(img_ref, img_seg)
-                v = vraie_detection(img_ref, img_seg)
-                f = fausse_detection(img_ref, img_seg)
-
-                hamming_vals.append(h)
-                diff_aire_vals.append(da)
-                corr_vals.append(c)
-                ssim_vals.append(s)
-                vraie_vals.append(v)
-                fausse_vals.append(f)
-
-            except Exception as e:
-                print(f"Erreur pour zone {zone}, mois {mois} ({date}) : {e}")
-                continue
-
-    if len(hamming_vals) == 0:
-        print(" ucun couple image / vérité terrain valide trouvé pour le calcul des scores.")
-        return {}
-
+            vraie_vals.append(vraie_detection(image_seg, image_gt))
+            accuracy_vals.append(score_precision(image_seg, image_gt))
+            corr_vals.append(score_correlation(image_seg, image_gt))
+            ssim_vals.append(similarite_structurelle(image_gt, image_gt))
+            
+        print()
     
-    scores_moyens = {
-        "hamming": float(np.nanmean(hamming_vals)),
-        "diff_aire": float(np.nanmean(diff_aire_vals)),
-        "correlation": float(np.nanmean(corr_vals)),
-        "ssim": float(np.nanmean(ssim_vals)),
-        "vraie_detection": float(np.nanmean(vraie_vals)),
-        "fausse_detection": float(np.nanmean(fausse_vals)),
-    }
+    resultat = f"""
+Scores moyens sur l'année {annee} :
 
-    print("\n=== Scores moyens sur l'année", annee, "===")
-    print(f"Distance de Hamming moyenne      : {scores_moyens['hamming']}")
-    print(f"Différence d'aire moyenne        : {scores_moyens['diff_aire']}")
-    print(f"Corrélation moyenne              : {scores_moyens['correlation']}")
-    print(f"Similarité structurelle moyenne  : {scores_moyens['ssim']}")
-    print(f"Vraie détection moyenne          : {scores_moyens['vraie_detection']}")
-    print(f"Fausse détection moyenne         : {scores_moyens['fausse_detection']}")
-    print("=========================================\n")
+Temps d'éxécution moyen          : {round(np.mean(temps_execution),3)}
 
-    return scores_moyens
+Distance de Hamming moyenne      : {round(np.nanmean(hamming_vals),3)}
+Différence d'aire moyenne        : {round(np.nanmean(diff_aire_vals),3)}
+Fausse détection moyenne         : {round(np.nanmean(fausse_vals),3)}
+    
+Vraie détection moyenne          : {round(np.nanmean(vraie_vals),3)}
+Score de précision moyen         : {round(np.nanmean(accuracy_vals),3)}
+Corrélation moyenne              : {round(np.nanmean(corr_vals),3)}
+Similarité structurelle moyenne  : {round(np.nanmean(ssim_vals),3)}
+"""
+
+    print(resultat)
+
+    with open(f"{DOSSIER_SORTIE}/score {fonction_segmentation.__name__}.txt", "w") as f:
+        
+        f.write(resultat)
 
 
 if __name__ == "__main__": # tests
@@ -416,7 +401,8 @@ if __name__ == "__main__": # tests
     #image_segmentee = segmentation_parfaite(image_ref)
 
     #test_segmentation(image_ref, segmentation_parfaite)
-    tests_segmentation(segmentation_parfaite)
+    #tests_segmentation(segmentation_parfaite)
+    moyenne_scores(segmentation_parfaite)
 
 
 
