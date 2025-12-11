@@ -13,7 +13,7 @@ INDICATEUR_BINAIRE = ListedColormap(['white', 'blue'])
 
 
 # récupération d'images au format tif
-def recuperer_images(mean_monthly : bool = False, zone : int = 2, selected_dates : list[str] = ['20210816', '20210828']) -> list[MaskedArray]:
+def recuperer_images(mean_monthly : bool = True, zone : int = 2, selected_dates : list[str] = ['20210816', '20210828']) -> list[MaskedArray]:
     
     dir = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
     images = []
@@ -52,7 +52,7 @@ def recuperer_image(path : str) -> MaskedArray:
 
 
 # affichage des tests
-def test_segmentation(image : MaskedArray, fonction_segmentation : Callable[[MaskedArray], ndarray], titre_oasis : str = "Image au format OASIS", titre_segmente : str = "Segmentation de l'image") -> None:
+def test_segmentation(image : MaskedArray, fonction_segmentation : Callable[[MaskedArray], ndarray], mean_monthly : bool = True) -> None:
 
     start = time.time()
     image_segmentee = fonction_segmentation(image)
@@ -60,24 +60,34 @@ def test_segmentation(image : MaskedArray, fonction_segmentation : Callable[[Mas
 
     print(f"fonction {fonction_segmentation.__name__} terminée en : {round(end - start,3)} secondes")
 
-    _, plots = plt.subplots(1, 2, figsize=(10, 6))
+    if mean_monthly :
+        _, plots = plt.subplots(1, 3, figsize=(14, 6))
+        
+    else :
+        _, plots = plt.subplots(1, 2, figsize=(10, 6))
 
     plot_oasis = plots[0]
     plot_segmente = plots[1]
 
     im = plot_oasis.imshow(image, cmap=INDICATEUR, origin='upper')
     plt.colorbar(im, ax=plot_oasis)
-    plot_oasis.set_title(titre_oasis)
+    plot_oasis.set_title("Image au format OASIS")
     plot_oasis.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
 
     plot_segmente.imshow(image_segmentee,cmap=INDICATEUR_BINAIRE , origin='upper')
-    plot_segmente.set_title(titre_segmente)
+    plot_segmente.set_title(f"Segmentation de l'image avec\n{fonction_segmentation.__name__}")
     plot_segmente.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+
+    if mean_monthly :
+        plot_reference = plots[2]
+        plot_reference.imshow(image_segmentee,cmap=INDICATEUR_BINAIRE , origin='upper')
+        plot_reference.set_title(f"Image de référence")
+        plot_reference.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
 
     plt.tight_layout()
     plt.show()
 
-def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray], annee : int = 2021, mean_monthly : bool = False, resolution : int = 500) -> None:
+def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray], annee : int = 2021, mean_monthly : bool = True, resolution : int = 300) -> None:
 
     fig, plots = plt.subplots(16,12,figsize=(12, 8))
     mois_annee = [
@@ -139,8 +149,8 @@ def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray],
     for mois in range(1,13):
         fig.text((mois / 12) * 0.98 -0.025, 0.93, f"{mois_annee[mois - 1]}", ha='center', va='center', fontsize=9, fontweight='bold')
 
-    print(f"temps d'éxécution moyen de {fonction_segmentation.__name__} : {round(sum(temps_execution) / len(temps_execution),3)}")
-    print(f"temps d'éxécution total de {fonction_segmentation.__name__} : {round(sum(temps_execution),3)}")
+    print(f"temps d'éxécution moyen de {fonction_segmentation.__name__} : {round(sum(temps_execution) / len(temps_execution),3)} secondes")
+    print(f"temps d'éxécution total de {fonction_segmentation.__name__} : {round(sum(temps_execution),3)} secondes")
     print("affichage et sauvegarde du graphique")
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
@@ -186,26 +196,19 @@ def vraie_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) ->
     seg = np.asarray(image_segmentee_2).ravel()
 
     if ref.shape != seg.shape:
-        raise ValueError("Les deux images doivent avoir la même taille")
-
-    mask = ~np.isnan(ref) & ~np.isnan(seg)
-    ref = ref[mask]
-    seg = seg[mask]
-
-    if ref.size == 0:
         return float('nan')
 
     ref_pos = ref > 0
     seg_pos = seg > 0
 
-    TP = np.sum(ref_pos & seg_pos)   # vrais positifs
-    FN = np.sum(ref_pos & ~seg_pos)  # faux négatifs
+    vrais_positifs = np.sum(ref_pos & seg_pos) # vrais positifs
+    faux_negatifs = np.sum(ref_pos & ~seg_pos) # faux négatifs
 
-    denom = TP + FN
+    denom = vrais_positifs + faux_negatifs
     if denom == 0:
         return float('nan')
 
-    return float(TP / denom)
+    return float(vrais_positifs / denom)
 
 def fausse_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
     
@@ -213,29 +216,23 @@ def fausse_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -
     seg = np.asarray(image_segmentee_2).ravel()
 
     if ref.shape != seg.shape:
-        raise ValueError("Les deux images doivent avoir la même taille")
-
-    mask = ~np.isnan(ref) & ~np.isnan(seg)
-    ref = ref[mask]
-    seg = seg[mask]
-
-    if ref.size == 0:
         return float('nan')
 
     ref_pos = ref > 0
     seg_pos = seg > 0
 
-    TN = np.sum(~ref_pos & ~seg_pos)  # vrais négatifs
-    FP = np.sum(~ref_pos & seg_pos)   # faux positifs
+    vrais_negatifs = np.sum(~ref_pos & ~seg_pos) # vrais négatifs
+    faux_positifs = np.sum(~ref_pos & seg_pos) # faux positifs
 
-    print(TN,FP)
-
-    denom = TN + FP
+    denom = vrais_negatifs + faux_positifs
     if denom == 0:
+
+        if faux_positifs == 0:
+            return 1.0
+        
         return float('nan')
 
-    # Spécificité = TN / (TN + FP), 1 = aucune fausse détection
-    return float(FP / denom)
+    return float(faux_positifs / denom)
 
 def print_tests(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray):
 
@@ -265,8 +262,7 @@ if __name__ == "__main__": # tests
 
     print_tests(image_segmentee, image_segmentee)
 
-    #image = recuperer_image("./GroundTruth_DYN/Test_zone6/Var_202101.tif")
-    #image_segmentee = test_segmentation(image, segmentation_test)
+    image_segmentee = test_segmentation(image, segmentation_test)
 
     #test_segmentation(image, segmentation_test)
     #tests_segmentation(segmentation_test)
