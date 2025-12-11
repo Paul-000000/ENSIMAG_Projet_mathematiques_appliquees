@@ -35,6 +35,7 @@ def segmentation_chan_vese_seuil(image: MaskedArray, sigma=2, mu=0.07, lambda1=1
 
 if __name__ == "__main__": # tests
 
-    image = recuperer_images(False, 5, ['20210816'])[0]
-    #test_segmentation(image, segmentation_chan_vese, "image OASIS du 16/08/2021","Segmentation Chan-Vese")
-    tests_segmentation(segmentation_chan_vese_seuil, annee=2021, mean_monthly=False)
+    image_ref = recuperer_images(zone=2, selected_dates=['202108'])[0]
+
+    test_segmentation(image_ref, segmentation_chan_vese_seuil)
+    tests_segmentation(segmentation_chan_vese_seuil, annee=2021)
