@@ -1,6 +1,8 @@
 from scipy.ndimage import gaussian_filter
 import numpy as np
-from manipulation_images_tif import *
+from codes.fonctions_images import *
+from fonctions_images import *
+from fonctions_tests import *
 
 
 def segmentation_seuillage_fixe(image: MaskedArray, seuil: float = 0.2, sigma: int = 2) -> ndarray:

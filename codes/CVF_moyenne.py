@@ -1,8 +1,10 @@
 from scipy.ndimage import gaussian_filter
 from skimage.segmentation import chan_vese
-from manipulation_images_tif import *
+from codes.fonctions_images import *
 from numpy import ndarray
 import numpy as np
+from fonctions_images import *
+from fonctions_tests import *
 
 
 def segmentation_chan_vese_moyenne(image: MaskedArray, sigma=1.2, mu=0.15, lambda1=1, lambda2=1, max_num_iter=300, tol=1e-4) -> ndarray:

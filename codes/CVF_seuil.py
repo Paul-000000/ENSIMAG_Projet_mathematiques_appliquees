@@ -1,9 +1,11 @@
 from scipy.ndimage import gaussian_filter
 from CV_scikit_modifie import chan_vese
 from skimage.exposure import rescale_intensity
-from manipulation_images_tif import *
+from codes.fonctions_images import *
 from numpy import ndarray
 import numpy as np
+from fonctions_images import *
+from fonctions_tests import *
 
 
 def segmentation_chan_vese_seuil(image: MaskedArray, sigma=2, mu=0.07, lambda1=1, lambda2=1, max_num_iter=200, tol=5e-4) -> ndarray:

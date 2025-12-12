@@ -3,7 +3,8 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 from skimage.exposure import rescale_intensity
 from sklearn.ensemble import RandomForestClassifier
-from manipulation_images_tif import *
+from fonctions_images import *
+from fonctions_tests import *
 
 
 
@@ -43,7 +44,7 @@ def train_random_forest(images : list[MaskedArray], masks : list[MaskedArray]) -
         n_estimators=20,
         max_depth=10,
         random_state=0,
-        n_jobs=5,
+        n_jobs=-1,
         verbose=0 # 2
     )
     model.fit(x_train, y_train)
@@ -131,4 +132,4 @@ if __name__ == "__main__":
 
     #tests_segmentation(segmentation_random_forest,annee=2023)
     moyenne_scores_annees(segmentation_random_forest, annees=[2023,2024])
-    graphe_scores_mensuels_2courbes_8zones_4ans(segmentation_random_forest)
+    graphe_scores(segmentation_random_forest)

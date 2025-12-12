@@ -3,10 +3,12 @@ from scipy.ndimage import gaussian_filter
 from skimage.exposure import rescale_intensity
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
-from manipulation_images_tif import *
+from fonctions_images import *
+from fonctions_tests import *
 
 
 def extract_intensity_features(image):
+
     image_no_nan = image.filled(np.nan)
     image_no_nan = np.nan_to_num(image_no_nan, nan=np.nanmean(image_no_nan))
 
@@ -67,7 +69,7 @@ def compute_accuracy(pred, mask):
 
 
 import os
-from manipulation_images_tif import recuperer_image
+from codes.fonctions_images import recuperer_image
 
 def load_training_data():
     images_x = []
@@ -131,8 +133,7 @@ if __name__ == "__main__":
 
     segmentation = predict_segmentation(model, image_test)
 
-    test_segmentation(image_test, lambda x: segmentation,
-                      "Image test", "Segmentation RF (intensité)")
+    test_segmentation(image_test, lambda x: segmentation)
     
     true_y=recuperer_image("./GroundTruth_DYN/Test_zone5/Var_202407.tif")
     acc=compute_accuracy(segmentation,true_y)

@@ -3,7 +3,8 @@ from skimage.util import view_as_windows
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from scipy.ndimage import gaussian_filter
-from manipulation_images_tif import *
+from fonctions_images import *
+from fonctions_tests import *
 
 
 def segmentation_kmeans_features(image, patch=5, n_clusters=2):
