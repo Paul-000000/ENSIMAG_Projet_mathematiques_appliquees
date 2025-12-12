@@ -1,6 +1,5 @@
 from scipy.ndimage import gaussian_filter
 import numpy as np
-from codes.fonctions_images import *
 from fonctions_images import *
 from fonctions_tests import *
 
@@ -28,4 +27,4 @@ if __name__ == "__main__": # tests
     
     #tests_segmentation(segmentation_seuillage_fixe, annee=2021)
     #moyenne_scores_annees(segmentation_seuillage_fixe)
-    graphe_scores_mensuels_2courbes_8zones_4ans(segmentation_seuillage_fixe)
+    graphe_scores(segmentation_seuillage_fixe)

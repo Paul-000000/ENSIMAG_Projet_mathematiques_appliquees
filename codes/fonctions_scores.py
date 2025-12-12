@@ -339,8 +339,8 @@ def graphe_scores(fonction_segmentation: Callable[[MaskedArray], ndarray],
 
         print()
 
-        ax.plot(x, s1, marker="o", color="blue", label="Scores qui tendent vers 1")
-        ax.plot(x, s0, marker="o", color="red", label="Scores qui tendent vers 0")
+        ax.plot(x, s1, marker="o", color="blue", label="moyenne des scores qui tendent vers 1")
+        ax.plot(x, s0, marker="o", color="red", label="moyenne des scores qui tendent vers 0")
         ax.set_ylim(0, 1)
         
         if i == 0:
