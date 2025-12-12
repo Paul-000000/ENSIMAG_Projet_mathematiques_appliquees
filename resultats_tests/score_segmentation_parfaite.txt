@@ -1,0 +1,13 @@
+
+Scores moyens sur toutes les années disponibles (Ground Truth) :
+
+Temps d'exécution moyen          : 0.002
+
+Distance de Hamming moyenne      : 0.009
+Différence d'aire moyenne        : 0.625
+Fausse détection moyenne         : 0.004
+
+Vraie détection moyenne          : 0.77
+Score de précision moyen         : 0.991
+Corrélation moyenne              : 0.808
+Similarité structurelle moyenne  : 0.964

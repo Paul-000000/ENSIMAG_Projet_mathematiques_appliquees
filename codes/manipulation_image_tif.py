@@ -208,7 +208,7 @@ def distance_hamming(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -
     if image_segmentee_1.shape != image_segmentee_2.shape:
         return float('nan')
     
-    return np.sum(image_segmentee_1 != image_segmentee_2) / (image_segmentee_1.shape[0] * image_segmentee_2.shape[1])
+    return np.sum(image_segmentee_1 != image_segmentee_2) / (image_segmentee_1.shape[0] * image_segmentee_1.shape[1])
 
 def difference_aire(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 0 signifie parfait
     
