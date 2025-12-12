@@ -6,6 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 from manipulation_images_tif import *
 
 
+
 def extract_intensity_features(image : MaskedArray) -> ndarray:
     
     image_no_nan = image.filled(np.nan)
@@ -21,31 +22,31 @@ def extract_intensity_features(image : MaskedArray) -> ndarray:
 
 def train_random_forest(images : list[MaskedArray], masks : list[MaskedArray]) -> RandomForestClassifier:
 
-    X_train = []
+    x_train = []
     y_train = []
 
     for img, mask in zip(images, masks):
 
         x = extract_intensity_features(img)
 
-        y = mask.filled(0).astype(int).reshape(-1)   # classes 0/1
+        y = mask.filled(0).astype(int).reshape(-1) # classes 0/1
 
-        X_train.append(x)
+        x_train.append(x)
         y_train.append(y)
-
-    X_train = np.vstack(X_train)
+        
+    x_train = np.vstack(x_train)
     y_train = np.hstack(y_train)
 
-    print(f"Taille dataset entraînement : {X_train.shape, y_train.shape}")
+    print(f"Taille dataset entraînement : {x_train.shape, y_train.shape}")
 
     model = RandomForestClassifier(
         n_estimators=20,
         max_depth=10,
         random_state=0,
-        n_jobs=-1,
-        verbose=0 #2
+        n_jobs=5,
+        verbose=2 #2
     )
-    model.fit(X_train, y_train)
+    model.fit(x_train, y_train)
 
     return model
 
@@ -58,12 +59,14 @@ def predict_segmentation(model : RandomForestClassifier , image : MaskedArray) -
 
 def load_training_images() -> tuple[list[MaskedArray],list[MaskedArray]]:
 
-    images = recuperer_images(mean_monthly=True, zone=2, selected_dates=['202101', '202102', '202103'])
-    masks = [
-        recuperer_image("./GroundTruth_DYN/Test_zone2/Var_202101.tif"),
-        recuperer_image("./GroundTruth_DYN/Test_zone2/Var_202102.tif"),
-        recuperer_image("./GroundTruth_DYN/Test_zone2/Var_202103.tif"),
-    ]
+    dates = ['202101', '202102', '202103']
+    images = recuperer_images(mean_monthly=True, zone=2, selected_dates=dates)
+    masks = []
+
+    for i in range(len(dates)) :
+
+        masks.append(images[i][1])
+        images[i] = images[i][0]
 
     return images, masks
 
@@ -105,7 +108,7 @@ def load_model(filemane : str) -> RandomForestClassifier:
 if __name__ == "__main__":
 
 
-    images, masks = load_training_data()
+    images, masks = load_training_data(annees=[2021,2022])
     print(f"nombre d'images : {len(images)}/{len(masks)}")
 
     start = time.time()
@@ -114,9 +117,9 @@ if __name__ == "__main__":
 
     print(f"temps d'entrainement {round(end-start,3)} secondes")
    
-    
+    save_model(model,"entrainement RF 2021-2022")
 
-    
+
     def segmentation_random_forest(image : np.ma.MaskedArray) -> np.ndarray:
 
         return predict_segmentation(model, image)
@@ -124,5 +127,5 @@ if __name__ == "__main__":
     #image_test = recuperer_images(mean_monthly=True,zone=5,selected_dates=['202407'])[0]
     #test_segmentation(image_test, segmentation_random_forest)
 
-    #tests_segmentation(segmentation_random_forest,annee=2022)
-    #moyenne_scores_annees(segmentation_random_forest, annees=[2022,2023,2024])
+    #tests_segmentation(segmentation_random_forest,annee=2023)
+    #moyenne_scores_annees(segmentation_random_forest, annees=[2023,2024])
