@@ -1,9 +1,8 @@
-import os
+import joblib
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from skimage.exposure import rescale_intensity
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
 from manipulation_images_tif import *
 
 
@@ -82,6 +81,9 @@ def load_training_data(annees : list[int] = [2021]):
 
     return images_x, images_y
 
+# joblib.dump(model, "mon_modele_random_forest.pkl")
+
+# model = joblib.load("mon_modele_random_forest.pkl")
 
 if __name__ == "__main__":
 
@@ -113,7 +115,7 @@ if __name__ == "__main__":
     model = train_random_forest(images, masks)
     end=time.time()
 
-    print(f"temps d'entrainement {end-start} secondes")
+    print(f"temps d'entrainement {round(end-start,3)} secondes")
    
     #image_test = recuperer_images(mean_monthly=True,zone=5,selected_dates=['202407'])[0]
 
@@ -125,5 +127,5 @@ if __name__ == "__main__":
 
     #true_y=recuperer_image("./GroundTruth_DYN/Test_zone5/Var_202407.tif")
 
-    tests_segmentation(segmentation_random_forest)
-    moyenne_scores_annees(segmentation_random_forest)
+    tests_segmentation(segmentation_random_forest,annee=2022)
+    moyenne_scores_annees(segmentation_random_forest, annees=[2021,2022,2023,2024])

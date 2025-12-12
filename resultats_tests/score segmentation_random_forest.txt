@@ -1,7 +1,7 @@
 
 Scores moyens sur les années [2021, 2022, 2023, 2024] :
 
-Temps d'éxécution moyen          : 0.101
+Temps d'éxécution moyen          : 0.066
 
 Distance de Hamming moyenne      : 0.024
 Différence d'aire moyenne        : 0.474
