@@ -416,6 +416,7 @@ if __name__ == "__main__": # tests
     #image_segmentee = segmentation_parfaite(image_ref)
 
     #test_segmentation(image_ref, segmentation_parfaite)
+    moyen_score(segmentation_parfaite)
     tests_segmentation(segmentation_parfaite)
 
 
