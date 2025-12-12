@@ -27,6 +27,8 @@ def segmentation_kmeans_features(image, patch=5, n_clusters=2):
 
 if __name__ == "__main__": # tests
 
-    image = recuperer_images(False, 5, ['20210106'])[0]
+    #image = recuperer_images(False, 5, ['20210106'])[0]
     #test_segmentation(image, segmentation_kmeans_features, "image OASIS du 16/08/2021","Segmentation Kmeans")
-    tests_segmentation(fonction_segmentation=segmentation_kmeans_features)
+    #tests_segmentation(fonction_segmentation=segmentation_kmeans_features)
+
+    moyenne_scores(segmentation_kmeans_features)
