@@ -346,14 +346,11 @@ def graphe_scores(fonction_segmentation: Callable[[MaskedArray], ndarray],
         if i == 0:
             ax.legend(loc="upper right", fontsize=8)
         
-        ax.set_xticklabels(annees, rotation=45, ha="right")
+        annees_str = [str(annee) for annee in annees]
+        annees_positions = [i*12 for i in range(len(annees))]
 
-        #else:
-        #    ax.set_xticklabels([])
-
-        #if i == 0:
-        #    ax.set_title(f"{annee}", fontsize=10)
-
+        ax.set_xticks(annees_positions)
+        ax.set_xticklabels(annees_str, ha="right")
         ax.set_ylabel(f"Zone {zone}\n", fontsize=9)
 
 
