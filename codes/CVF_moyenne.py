@@ -53,7 +53,9 @@ def segmentation_chan_vese_moyenne(image: MaskedArray, sigma=1.2, mu=0.15, lambd
 
 if __name__ == "__main__": # tests
     
-    image = recuperer_images(False, 5, ['20210816'])[0]
+    #image = recuperer_images(False, 5, ['20210816'])[0]
     #test_segmentation(image, segmentatiosegmentation_chan_vese_moyennen_chan_vese, "image OASIS du 16/08/2021","Segmentation Chan-Vese")
     #tests_segmentation(segmentation_chan_vese_moyenne, annee=2021, mean_monthly=False)
-    moyenne_scores(segmentation_chan_vese_moyenne)
+
+    tests_segmentation(segmentation_chan_vese_moyenne)
+    moyenne_scores_annees(segmentation_chan_vese_moyenne)

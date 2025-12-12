@@ -392,10 +392,8 @@ Similarité structurelle moyenne  : {round(np.nanmean(ssim_vals), 3)}
 
     print(resultat)
 
-    with open(f"{DOSSIER_SORTIE}/score_{fonction_segmentation.__name__}.txt", "w") as f:
+    with open(f"{DOSSIER_SORTIE}/score {fonction_segmentation.__name__}.txt", "w") as f:
         f.write(resultat)
-
-
    
 
 if __name__ == "__main__": # tests
@@ -411,9 +409,9 @@ if __name__ == "__main__": # tests
     image_ref = recuperer_images(zone = 2, selected_dates=['20210816'])[0]
     #image_ref = recuperer_image("./Data/Test_zone6/OASIS/s1a_fusion_ASC_161_20210118_oasis_VV_Offset55_Test_zone6.tif")
     #image_segmentee = segmentation_test(image_ref)
-
     #test_segmentation(image_ref, segmentation_test)
-    #tests_segmentation(segmentation_test)
+
+    tests_segmentation(segmentation_test)
     moyenne_scores_annees(segmentation_test)
 
 

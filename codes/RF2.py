@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from skimage.exposure import rescale_intensity
@@ -19,7 +20,6 @@ def extract_intensity_features(image):
 
     return image_normalisee.reshape(-1, 1)  # Feature = intensité
 
-
 def train_random_forest(images, masks):
 
     X_train = []
@@ -27,18 +27,17 @@ def train_random_forest(images, masks):
 
     for img, mask in zip(images, masks):
 
-        X = extract_intensity_features(img)
+        x = extract_intensity_features(img)
 
         y = mask.filled(0).astype(int).reshape(-1)   # classes 0/1
 
-        X_train.append(X)
+        X_train.append(x)
         y_train.append(y)
 
     X_train = np.vstack(X_train)
     y_train = np.hstack(y_train)
 
-    print("Taille dataset entraînement :", X_train.shape, y_train.shape)
-
+    print(f"Taille dataset entraînement : {X_train.shape, y_train.shape}")
 
     model = RandomForestClassifier(
         n_estimators=20,
@@ -53,89 +52,70 @@ def train_random_forest(images, masks):
 
 
 def predict_segmentation(model, image):
-    X = extract_intensity_features(image)
-    y_pred = model.predict(X)
+
+    x = extract_intensity_features(image)
+    y_pred = model.predict(x)
     return y_pred.reshape(image.shape)
 
-def compute_accuracy(pred, mask):
-    gt = mask.filled(0).astype(int)
+def load_training_data(annees : list[int] = [2021]):
 
-    y_true = gt.reshape(-1)
-    y_pred = pred.reshape(-1)
-
-    acc = accuracy_score(y_true, y_pred)
-    return acc
-
-
-import os
-from manipulation_images_tif import recuperer_image
-
-def load_training_data():
     images_x = []
     images_y = []
 
-    for zone in range(1, 9):
+    for annee in annees:
 
-        dir_y = f'./GroundTruth_DYN/Test_zone{zone}/'
-        dir_x = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
+        for zone in range(1, 9):
 
-        files_x = sorted(os.listdir(dir_x))
-        files_y = sorted(os.listdir(dir_y))
+            dir_y = f'./GroundTruth_DYN/Test_zone{zone}/'
+            dir_x = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
 
-        for file_x in files_x:
-            if "MoyenneMensuelle" not in file_x:
-                continue
-            date_x = file_x[17:23]  
-            
-            for file_y in files_y:
-                if "Var_" not in file_y:
-                    continue
-                date_y = file_y[4:10]  
-                if (date_x == date_y) and "2021" in date_x:
-                   
-                    full_path_x = os.path.join(dir_x, file_x)
-                    full_path_y = os.path.join(dir_y, file_y)
-                    images_x.append(recuperer_image(full_path_x))
-                    images_y.append(recuperer_image(full_path_y))
-                    break  
+            for mois in range(1,13):
+
+                date = f"{annee}{mois:02d}"
+                chemin_image_x = premier_fichier_dossier(f"{dir_x}*{date}*.tif")
+                chemin_image_y = premier_fichier_dossier(f"{dir_y}*{date}*.tif")
+                
+                if chemin_image_x is not None and chemin_image_y is not None :
+                    
+                    images_x.append(recuperer_image(chemin_image_x))
+                    images_y.append(image_reference_binaire(recuperer_image(chemin_image_y)))
 
     return images_x, images_y
 
 
 if __name__ == "__main__":
 
-   
+    """
     images = recuperer_images(
         mean_monthly=True,
         zone=2,
         selected_dates=['202101', '202102', '202103']
     )
 
+    masks = []
+
     for i in range(len(images)) :
         images[i] = images[i][0]
-   
+        masks.append(images[i][1])
+        
+    
     masks = [
         recuperer_image("./GroundTruth_DYN/Test_zone2/Var_202101.tif"),
         recuperer_image("./GroundTruth_DYN/Test_zone2/Var_202102.tif"),
         recuperer_image("./GroundTruth_DYN/Test_zone2/Var_202103.tif"),
     ]
-    #images,masks=load_training_data()
-    print(f"nombre d'images y: {len(images)}")
-    print(f"nombre d'images x:{len(masks)}")
+    """
+
+    images, masks = load_training_data()
+    print(f"nombre d'images : {len(images)}/{len(masks)}")
 
     start = time.time()
     model = train_random_forest(images, masks)
     end=time.time()
-    print(f"temps d'entrainement {end-start}")
-   
-    image_test = recuperer_images(
-        mean_monthly=True,
-        zone=5,
-        selected_dates=['202407']
-    )[0]
 
-    
-    #segmentation = predict_segmentation(model, image_test[0])
+    print(f"temps d'entrainement {end-start} secondes")
+   
+    #image_test = recuperer_images(mean_monthly=True,zone=5,selected_dates=['202407'])[0]
 
     def segmentation_random_forest(image : np.ma.MaskedArray) -> np.ndarray:
 
@@ -144,6 +124,6 @@ if __name__ == "__main__":
     #test_segmentation(image_test, segmentation_random_forest)
 
     #true_y=recuperer_image("./GroundTruth_DYN/Test_zone5/Var_202407.tif")
-    #acc=compute_accuracy(segmentation,true_y)
-    #print(f"accuracy {acc}")
-    moyenne_scores(segmentation_random_forest)
+
+    tests_segmentation(segmentation_random_forest)
+    moyenne_scores_annees(segmentation_random_forest)

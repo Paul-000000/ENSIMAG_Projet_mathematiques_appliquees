@@ -24,5 +24,5 @@ if __name__ == "__main__": # tests
     #image_ref = recuperer_images(zone=5, selected_dates=['202102'])[0]
     #test_segmentation(image_ref, segmentation_seuillage_fixe)
     
-    #tests_segmentation(segmentation_seuillage_fixe, annee=2021)
-    moyenne_scores(segmentation_seuillage_fixe)
+    tests_segmentation(segmentation_seuillage_fixe, annee=2021)
+    moyenne_scores_annees(segmentation_seuillage_fixe)

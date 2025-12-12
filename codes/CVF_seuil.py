@@ -36,8 +36,7 @@ def segmentation_chan_vese_seuil(image: MaskedArray, sigma=2, mu=0.07, lambda1=1
 if __name__ == "__main__": # tests
 
     image_ref = recuperer_images(zone=2, selected_dates=['202108'])[0]
-    
     #test_segmentation(image_ref, segmentation_chan_vese_seuil)
-    #tests_segmentation(segmentation_chan_vese_seuil, annee=2021)
-
-    moyenne_scores(segmentation_chan_vese_seuil)
+    
+    tests_segmentation(segmentation_chan_vese_seuil, annee=2021)
+    moyenne_scores_annees(segmentation_chan_vese_seuil)
