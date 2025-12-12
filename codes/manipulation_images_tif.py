@@ -38,7 +38,7 @@ def recuperer_images(mean_monthly : bool = True, zone : int = 2, selected_dates 
 
             chemin_image_ref = premier_fichier_dossier(f"{dir_mean_monthly}*{date}*.tif")
 
-            image_reference = recuperer_image(chemin_image_ref).astype(int)
+            image_reference = image_reference_binaire(recuperer_image(chemin_image_ref))
 
             images_refs.append((recuperer_image(chemin_image),image_reference))
             
@@ -63,6 +63,11 @@ def recuperer_image(path : str) -> MaskedArray:
         data = np.ma.masked_where(mask, band)
 
     return data
+
+def image_reference_binaire(image_ref : MaskedArray) -> MaskedArray:
+
+    image_ref[image_ref < 1] = 0
+    return image_ref
 
 def premier_fichier_dossier(path : str) -> str | None :
 
@@ -177,7 +182,7 @@ def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray],
                 plot_segmente = plots[(zone-1) * 3 + 1, mois-1]
                 plot_ref = plots[(zone-1) * 3 + 2, mois-1]
 
-                plot_ref.imshow(recuperer_image(chemin_image_ref).astype(int), cmap=INDICATEUR_BINAIRE, origin='upper')
+                plot_ref.imshow(image_reference_binaire(recuperer_image(chemin_image_ref)), cmap=INDICATEUR_BINAIRE, origin='upper')
                 plot_ref.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
                 
             plot_oasis.imshow(image, cmap=INDICATEUR_OASIS, origin='upper')
@@ -208,7 +213,7 @@ def distance_hamming(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -
     if image_segmentee_1.shape != image_segmentee_2.shape:
         return float('nan')
     
-    return np.sum(image_segmentee_1 != image_segmentee_2) / (image_segmentee_1.shape[0] * image_segmentee_2.shape[1])
+    return np.sum(image_segmentee_1 != image_segmentee_2) / (image_segmentee_1.shape[0] * image_segmentee_1.shape[1])
 
 def difference_aire(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 0 signifie parfait
     
@@ -235,7 +240,7 @@ def fausse_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -
     if denom == 0:
 
         if faux_positifs == 0:
-            return 1.0
+            return 0.
         
         return float('nan')
 
@@ -311,11 +316,11 @@ def print_scores(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray):
     print(f"Score de précision : {round(score_precision(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Corrélation : {round(score_correlation(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Similarité structurelle : {round(similarite_structurelle(image_segmentee_1, image_segmentee_2),3)}")
-    
-def moyenne_scores(fonction_segmentation : Callable[[MaskedArray], ndarray], annee : int = 2021) -> None:
-    
+   
+def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray], annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
+
     temps_execution = []
-    
+
     hamming_vals = []
     diff_aire_vals = []
     fausse_vals = []
@@ -325,87 +330,91 @@ def moyenne_scores(fonction_segmentation : Callable[[MaskedArray], ndarray], ann
     corr_vals = []
     ssim_vals = []
 
-    for zone in range(1, 9):
+    for annee in annees:
+        print(f"année {annee} :")
 
-        print(f"segmentation Zone {zone}/8 ", end="")
+        for zone in range(1, 9):
 
-        dir_oasis = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
-        dir_gt = f'./GroundTruth_DYN/Test_zone{zone}/'
+            print(f"Zone {zone}/8 ", end="")
 
-        for mois in range(1, 13):
+            dir_oasis = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
+            dir_gt = f'./GroundTruth_DYN/Test_zone{zone}/'
 
-            print(f".", end="")
+            for mois in range(1, 13):
 
-            date = f"{annee}{mois:02d}"
-            img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
-            
-            if img_path is None:               
-                continue
+                print(f".", end="")
 
-            gt_path = premier_fichier_dossier(f"{dir_gt}*{date}*.tif")
-            
-            if gt_path is None: 
-                continue
+                date = f"{annee}{mois:02d}"
+                img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
 
-            image_oasis = recuperer_image(img_path)
-            image_gt = recuperer_image(gt_path).astype(int)
+                if img_path is None:
+                    continue
 
-            start = time.time()
-            image_seg = fonction_segmentation(image_oasis)
-            end = time.time()
+                gt_path = premier_fichier_dossier(f"{dir_gt}*{date}*.tif")
 
-            temps_execution.append(end-start)
+                if gt_path is None:
+                    continue
 
-            hamming_vals.append(distance_hamming(image_seg, image_gt))
-            diff_aire_vals.append(difference_aire(image_seg, image_gt))
-            fausse_vals.append(fausse_detection(image_seg, image_gt))
+                image_oasis = recuperer_image(img_path)
+                image_gt = recuperer_image(gt_path).astype(int)
 
-            vraie_vals.append(vraie_detection(image_seg, image_gt))
-            accuracy_vals.append(score_precision(image_seg, image_gt))
-            corr_vals.append(score_correlation(image_seg, image_gt))
-            ssim_vals.append(similarite_structurelle(image_gt, image_gt))
-            
-        print()
-    
+                start = time.time()
+                image_seg = fonction_segmentation(image_oasis)
+                end = time.time()
+
+                temps_execution.append(end - start)
+
+                hamming_vals.append(distance_hamming(image_seg, image_gt))
+                diff_aire_vals.append(difference_aire(image_seg, image_gt))
+                fausse_vals.append(fausse_detection(image_seg, image_gt))
+
+                vraie_vals.append(vraie_detection(image_seg, image_gt))
+                accuracy_vals.append(score_precision(image_seg, image_gt))
+                corr_vals.append(score_correlation(image_seg, image_gt))
+                ssim_vals.append(similarite_structurelle(image_seg, image_gt))
+
+            print()
+
     resultat = f"""
-Scores moyens sur l'année {annee} :
+Scores moyens sur les années {annees} :
 
-Temps d'éxécution moyen          : {round(np.mean(temps_execution),3)}
+Temps d'éxécution moyen          : {round(np.mean(temps_execution), 3)}
 
-Distance de Hamming moyenne      : {round(np.nanmean(hamming_vals),3)}
-Différence d'aire moyenne        : {round(np.nanmean(diff_aire_vals),3)}
-Fausse détection moyenne         : {round(np.nanmean(fausse_vals),3)}
-    
-Vraie détection moyenne          : {round(np.nanmean(vraie_vals),3)}
-Score de précision moyen         : {round(np.nanmean(accuracy_vals),3)}
-Corrélation moyenne              : {round(np.nanmean(corr_vals),3)}
-Similarité structurelle moyenne  : {round(np.nanmean(ssim_vals),3)}
+Distance de Hamming moyenne      : {round(np.nanmean(hamming_vals), 3)}
+Différence d'aire moyenne        : {round(np.nanmean(diff_aire_vals), 3)}
+Fausse détection moyenne         : {round(np.nanmean(fausse_vals), 3)}
+
+Vraie détection moyenne          : {round(np.nanmean(vraie_vals), 3)}
+Score de précision moyen         : {round(np.nanmean(accuracy_vals), 3)}
+Corrélation moyenne              : {round(np.nanmean(corr_vals), 3)}
+Similarité structurelle moyenne  : {round(np.nanmean(ssim_vals), 3)}
 """
 
     print(resultat)
 
-    with open(f"{DOSSIER_SORTIE}/score {fonction_segmentation.__name__}.txt", "w") as f:
-        
+    with open(f"{DOSSIER_SORTIE}/score_{fonction_segmentation.__name__}.txt", "w") as f:
         f.write(resultat)
 
+
+   
 
 if __name__ == "__main__": # tests
 
 
-    def segmentation_parfaite(image : MaskedArray) -> ndarray:
+    def segmentation_test(image : MaskedArray) -> ndarray:
 
-        image_ref = recuperer_image("GroundTruth_DYN/Test_zone2/Var_202108.tif").astype(int)
+        image_ref = image_reference_binaire(recuperer_image("GroundTruth_DYN/Test_zone2/Var_202108.tif"))
 
         return image_ref
 
 
     image_ref = recuperer_images(zone = 2, selected_dates=['20210816'])[0]
     #image_ref = recuperer_image("./Data/Test_zone6/OASIS/s1a_fusion_ASC_161_20210118_oasis_VV_Offset55_Test_zone6.tif")
-    #image_segmentee = segmentation_parfaite(image_ref)
+    #image_segmentee = segmentation_test(image_ref)
 
-    #test_segmentation(image_ref, segmentation_parfaite)
-    #tests_segmentation(segmentation_parfaite)
-    moyenne_scores(segmentation_parfaite)
+    #test_segmentation(image_ref, segmentation_test)
+    #tests_segmentation(segmentation_test)
+    moyenne_scores_annees(segmentation_test)
 
 
 
