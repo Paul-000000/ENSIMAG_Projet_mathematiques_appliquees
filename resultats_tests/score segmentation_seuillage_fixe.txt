@@ -1,7 +1,7 @@
 
 Scores moyens sur l'année 2021 :
 
-Temps d'éxécution moyen          : 0.005
+Temps d'éxécution moyen          : 0.004
 
 Distance de Hamming moyenne      : 0.039
 Différence d'aire moyenne        : 0.452

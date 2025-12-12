@@ -1,4 +1,4 @@
-import os, rasterio, matplotlib, time, glob
+import rasterio, matplotlib, time, glob
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
@@ -262,7 +262,10 @@ def score_correlation(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) 
 
 def similarite_structurelle(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
     
-    score, _ = structural_similarity(image_segmentee_1, image_segmentee_2, data_range=1, full=True)
+    if image_segmentee_1.shape != image_segmentee_2.shape:
+        return float('nan')
+
+    score, _ = structural_similarity(image_segmentee_1.astype(float), image_segmentee_2.astype(float), data_range=1., full=True)
     return score
 
 def vraie_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
