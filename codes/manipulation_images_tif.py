@@ -18,7 +18,7 @@ INDICATEUR_BINAIRE = ListedColormap(['white', 'blue'])
 def recuperer_images(mean_monthly : bool = True, zone : int = 2, selected_dates : list[str] = ['20210816', '20210828']) -> list[tuple[MaskedArray, MaskedArray | None]]:
     
     dir = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
-    dir_mean_monthly = f"./GroundTruth_DYN/Test_zone{zone}/"
+    dir_mean_monthly = f"./GroundTruth_DYN/GroundTruth_DYN/Test_zone{zone}/"
 
     images_refs = []
 
@@ -38,7 +38,7 @@ def recuperer_images(mean_monthly : bool = True, zone : int = 2, selected_dates 
 
             chemin_image_ref = premier_fichier_dossier(f"{dir_mean_monthly}*{date}*.tif")
 
-            image_reference = image_reference_binaire(recuperer_image(chemin_image_ref))
+            image_reference = recuperer_image(chemin_image_ref).astype(int)
 
             images_refs.append((recuperer_image(chemin_image),image_reference))
             
@@ -63,11 +63,6 @@ def recuperer_image(path : str) -> MaskedArray:
         data = np.ma.masked_where(mask, band)
 
     return data
-
-def image_reference_binaire(image_ref : MaskedArray) -> MaskedArray:
-
-    image_ref[image_ref < 1] = 0
-    return image_ref
 
 def premier_fichier_dossier(path : str) -> str | None :
 
@@ -151,7 +146,7 @@ def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray],
         dir = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
 
         if mean_monthly :
-            dir_mean_monthly = f"./GroundTruth_DYN/Test_zone{zone}/"
+            dir_mean_monthly = f"./GroundTruth_DYN/GroundTruth_DYN/Test_zone{zone}/"
 
         for mois in range(1,13):
             
@@ -182,7 +177,7 @@ def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray],
                 plot_segmente = plots[(zone-1) * 3 + 1, mois-1]
                 plot_ref = plots[(zone-1) * 3 + 2, mois-1]
 
-                plot_ref.imshow(image_reference_binaire(recuperer_image(chemin_image_ref)), cmap=INDICATEUR_BINAIRE, origin='upper')
+                plot_ref.imshow(recuperer_image(chemin_image_ref).astype(int), cmap=INDICATEUR_BINAIRE, origin='upper')
                 plot_ref.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
                 
             plot_oasis.imshow(image, cmap=INDICATEUR_OASIS, origin='upper')
@@ -213,7 +208,7 @@ def distance_hamming(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -
     if image_segmentee_1.shape != image_segmentee_2.shape:
         return float('nan')
     
-    return np.sum(image_segmentee_1 != image_segmentee_2) / (image_segmentee_1.shape[0] * image_segmentee_1.shape[1])
+    return np.sum(image_segmentee_1 != image_segmentee_2) / (image_segmentee_1.shape[0] * image_segmentee_2.shape[1])
 
 def difference_aire(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 0 signifie parfait
     
@@ -240,7 +235,7 @@ def fausse_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -
     if denom == 0:
 
         if faux_positifs == 0:
-            return 0.
+            return 1.0
         
         return float('nan')
 
@@ -316,11 +311,11 @@ def print_scores(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray):
     print(f"Score de précision : {round(score_precision(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Corrélation : {round(score_correlation(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Similarité structurelle : {round(similarite_structurelle(image_segmentee_1, image_segmentee_2),3)}")
-   
-def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray], annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
-
+    
+def moyenne_scores(fonction_segmentation: Callable[[MaskedArray], ndarray]) -> None:
+    
     temps_execution = []
-
+    
     hamming_vals = []
     diff_aire_vals = []
     fausse_vals = []
@@ -330,55 +325,55 @@ def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray
     corr_vals = []
     ssim_vals = []
 
-    for annee in annees:
-        print(f"année {annee} :")
+    for zone in range(1, 9):
 
-        for zone in range(1, 9):
+        print(f"segmentation Zone {zone}/8 ", end="")
 
-            print(f"Zone {zone}/8 ", end="")
+        dir_oasis = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
+        dir_gt = f'./GroundTruth_DYN/GroundTruth_DYN/Test_zone{zone}/'
 
-            dir_oasis = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
-            dir_gt = f'./GroundTruth_DYN/Test_zone{zone}/'
+        # Toutes les dates disponibles depuis les Ground Truth
+        gt_files = sorted(glob.glob(f"{dir_gt}Var_*.tif"))
 
-            for mois in range(1, 13):
+        for gt_path in gt_files:
 
-                print(f".", end="")
+            print(".", end="")
 
-                date = f"{annee}{mois:02d}"
-                img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
+            # Extraire YYYYMM depuis Var_YYYYMM.tif
+            date = gt_path.split("Var_")[1].split(".tif")[0]
 
-                if img_path is None:
-                    continue
+            # Chercher l’image OASIS correspondante
+            img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
+            if img_path is None:
+                continue
 
-                gt_path = premier_fichier_dossier(f"{dir_gt}*{date}*.tif")
+            # Charger images
+            image_oasis = recuperer_image(img_path)
+            image_gt = recuperer_image(gt_path).astype(int)
 
-                if gt_path is None:
-                    continue
+            # Segmentation
+            start = time.time()
+            image_seg = fonction_segmentation(image_oasis)
+            end = time.time()
 
-                image_oasis = recuperer_image(img_path)
-                image_gt = recuperer_image(gt_path).astype(int)
+            temps_execution.append(end - start)
 
-                start = time.time()
-                image_seg = fonction_segmentation(image_oasis)
-                end = time.time()
+            # Scores
+            hamming_vals.append(distance_hamming(image_seg, image_gt))
+            diff_aire_vals.append(difference_aire(image_seg, image_gt))
+            fausse_vals.append(fausse_detection(image_seg, image_gt))
 
-                temps_execution.append(end - start)
+            vraie_vals.append(vraie_detection(image_seg, image_gt))
+            accuracy_vals.append(score_precision(image_seg, image_gt))
+            corr_vals.append(score_correlation(image_seg, image_gt))
+            ssim_vals.append(similarite_structurelle(image_seg, image_gt))
 
-                hamming_vals.append(distance_hamming(image_seg, image_gt))
-                diff_aire_vals.append(difference_aire(image_seg, image_gt))
-                fausse_vals.append(fausse_detection(image_seg, image_gt))
-
-                vraie_vals.append(vraie_detection(image_seg, image_gt))
-                accuracy_vals.append(score_precision(image_seg, image_gt))
-                corr_vals.append(score_correlation(image_seg, image_gt))
-                ssim_vals.append(similarite_structurelle(image_seg, image_gt))
-
-            print()
+        print()
 
     resultat = f"""
-Scores moyens sur les années {annees} :
+Scores moyens sur toutes les années disponibles (Ground Truth) :
 
-Temps d'éxécution moyen          : {round(np.mean(temps_execution), 3)}
+Temps d'exécution moyen          : {round(np.mean(temps_execution), 3)}
 
 Distance de Hamming moyenne      : {round(np.nanmean(hamming_vals), 3)}
 Différence d'aire moyenne        : {round(np.nanmean(diff_aire_vals), 3)}
@@ -392,27 +387,448 @@ Similarité structurelle moyenne  : {round(np.nanmean(ssim_vals), 3)}
 
     print(resultat)
 
-    with open(f"{DOSSIER_SORTIE}/score {fonction_segmentation.__name__}.txt", "w") as f:
+    with open(f"{DOSSIER_SORTIE}/score_{fonction_segmentation.__name__}.txt", "w") as f:
         f.write(resultat)
-   
+
+
+def graphique_scores_par_annee(
+    fonction_segmentation: Callable[[MaskedArray], ndarray],
+    score_fonction=vraie_detection
+) -> None:
+    """
+    Affiche un graphique montrant l'évolution du score (0 → 1)
+    en fonction des années, toutes zones confondues.
+    """
+
+    scores_par_annee = {}   # {année: [scores]}
+
+    for zone in range(1, 9):
+
+        print(f"Analyse Zone {zone}/8")
+
+        dir_oasis = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
+        dir_gt = f'./GroundTruth_DYN/GroundTruth_DYN/Test_zone{zone}/'
+
+        gt_files = glob.glob(f"{dir_gt}Var_*.tif")
+
+        for gt_path in gt_files:
+
+            date = gt_path.split("Var_")[1].split(".tif")[0]  # YYYYMM
+            annee = date[:4]
+
+            img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
+            if img_path is None:
+                continue
+
+            image_oasis = recuperer_image(img_path)
+            image_gt = recuperer_image(gt_path).astype(int)
+
+            image_seg = fonction_segmentation(image_oasis)
+
+            score = score_fonction(image_seg, image_gt)
+
+            if np.isnan(score):
+                continue
+
+            if annee not in scores_par_annee:
+                scores_par_annee[annee] = []
+
+            scores_par_annee[annee].append(score)
+
+    # Moyenne annuelle
+    annees = sorted(scores_par_annee.keys())
+    scores_moyens = [np.mean(scores_par_annee[a]) for a in annees]
+
+    # 📊 Graphique
+    plt.figure(figsize=(8, 5))
+    plt.plot(annees, scores_moyens, marker='o', linewidth=2)
+    plt.ylim(0, 1)
+    plt.grid(True)
+
+    plt.xlabel("Année")
+    plt.ylabel("Score moyen (0 → mauvais, 1 → excellent)")
+    plt.title(f"Évolution du score par année\n({score_fonction.__name__})")
+
+    plt.show()
+
+
+def graphique_scores_par_zone(
+    fonction_segmentation: Callable[[MaskedArray], ndarray],
+    score_fonction=vraie_detection,
+    seuil: float = 0.5
+) -> None:
+    """
+    Affiche un graphique PAR ZONE :
+    - X : temps (YYYY-MM)
+    - Y : score (0 → 1)
+    - rouge si score < seuil
+    - bleu sinon
+    """
+
+    for zone in range(1, 9):
+
+        print(f"Génération du graphique pour la zone {zone}")
+
+        dir_oasis = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
+        dir_gt = f'./GroundTruth_DYN/GroundTruth_DYN/Test_zone{zone}/'
+
+        gt_files = sorted(glob.glob(f"{dir_gt}Var_*.tif"))
+
+        dates = []
+        scores = []
+
+        for gt_path in gt_files:
+
+            date = gt_path.split("Var_")[1].split(".tif")[0]  # YYYYMM
+
+            img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
+            if img_path is None:
+                continue
+
+            image_oasis = recuperer_image(img_path)
+            image_gt = recuperer_image(gt_path).astype(int)
+
+            image_seg = fonction_segmentation(image_oasis)
+            score = score_fonction(image_seg, image_gt)
+
+            if np.isnan(score):
+                continue
+
+            dates.append(date)
+            scores.append(score)
+
+        if len(scores) == 0:
+            print(f"Aucun score valide pour la zone {zone}")
+            continue
+
+        # Séparation des points
+        dates = np.array(dates)
+        scores = np.array(scores)
+
+        couleurs = np.where(scores < seuil, "red", "blue")
+
+        # 📊 Graphique
+        plt.figure(figsize=(10, 4))
+        plt.scatter(dates, scores, c=couleurs, s=40)
+        plt.axhline(seuil, color="gray", linestyle="--", linewidth=1)
+
+        plt.ylim(0, 1)
+        plt.xticks(rotation=45)
+        plt.grid(True, alpha=0.3)
+
+        plt.xlabel("Date (YYYY-MM)")
+        plt.ylabel(f"Score ({score_fonction.__name__})")
+        plt.title(f"Zone {zone} — Évolution mensuelle des performances")
+
+        plt.tight_layout()
+        plt.show()
+        
+
+def graphique_scores_par_zone_courbes(
+    fonction_segmentation: Callable[[MaskedArray], ndarray],
+    score_fonction=vraie_detection,
+    seuil: float = 0.5
+) -> None:
+    """
+    Pour chaque zone :
+    - X : temps (YYYYMM)
+    - Y : score (0 → 1)
+    - courbe BLEUE : scores >= seuil
+    - courbe ROUGE : scores < seuil
+    """
+
+    for zone in range(1, 9):
+
+        print(f"Génération du graphique (courbes) pour la zone {zone}")
+
+        dir_oasis = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
+        dir_gt = f'./GroundTruth_DYN/GroundTruth_DYN/Test_zone{zone}/'
+
+        gt_files = sorted(glob.glob(f"{dir_gt}Var_*.tif"))
+
+        dates = []
+        scores = []
+
+        for gt_path in gt_files:
+
+            date = gt_path.split("Var_")[1].split(".tif")[0]  # YYYYMM
+
+            img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
+            if img_path is None:
+                continue
+
+            image_oasis = recuperer_image(img_path)
+            image_gt = recuperer_image(gt_path).astype(int)
+
+            image_seg = fonction_segmentation(image_oasis)
+            score = score_fonction(image_seg, image_gt)
+
+            if np.isnan(score):
+                continue
+
+            dates.append(date)
+            scores.append(score)
+
+        if len(scores) == 0:
+            print(f"Aucun score valide pour la zone {zone}")
+            continue
+
+        # Conversion en arrays
+        dates = np.array(dates)
+        scores = np.array(scores)
+
+        # Deux courbes (NaN coupe la ligne)
+        scores_hauts = np.where(scores >= seuil, scores, np.nan)
+        scores_bas   = np.where(scores <  seuil, scores, np.nan)
+
+        # 📊 Graphique
+        plt.figure(figsize=(10, 4))
+
+        plt.plot(dates, scores_hauts, color="blue", linewidth=2, label="Score ≥ 0.5")
+        plt.plot(dates, scores_bas,   color="red",  linewidth=2, label="Score < 0.5")
+
+        plt.axhline(seuil, color="gray", linestyle="--", linewidth=1)
+
+        plt.ylim(0, 1)
+        plt.xticks(rotation=45)
+        plt.grid(True, alpha=0.3)
+
+        plt.xlabel("Date (YYYY-MM)")
+        plt.ylabel(f"Score ({score_fonction.__name__})")
+        plt.title(f"Zone {zone} — Évolution mensuelle des performances")
+        plt.legend()
+
+        plt.tight_layout()
+
+        # ⚠️ important pour afficher toutes les zones
+        plt.show()
+       
+
+def graphe_scores_mensuels_2courbes_8figures(fonction_segmentation: Callable[[MaskedArray], ndarray],
+                                            annee: int = 2021,
+                                            mean_monthly: bool = True,
+                                            resolution: int = 250) -> None:
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import time
+    from manipulation_images_tif import premier_fichier_dossier, recuperer_image, DOSSIER_SORTIE
+
+    def _to_binary(a):
+        if hasattr(a, "filled"):
+            a = a.filled(0)
+        return (a > 0).astype(np.uint8)
+
+    def iou_score(pred, gt):
+        p = _to_binary(pred).ravel()
+        g = _to_binary(gt).ravel()
+        inter = np.sum((p == 1) & (g == 1))
+        union = np.sum((p == 1) | (g == 1))
+        return 1.0 if union == 0 else inter / union
+
+    def score_0_meilleur(pred, gt):
+        if "distance_hamming" in globals():
+            return distance_hamming(pred, gt)
+        if "difference_aire" in globals():
+            return difference_aire(pred, gt)
+        if "fausse_detection" in globals():
+            return fausse_detection(pred, gt)
+        return np.nan
+
+    mois_labels = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"]
+    x = np.arange(1, 13)
+
+    temps_execution = []
+
+    for zone in range(1, 9):
+        dir_oasis = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
+        dir_gt = f'./GroundTruth_DYN/GroundTruth_DYN/Test_zone{zone}/'
+
+        s1 = []
+        s0 = []
+
+        for mois in range(1, 13):
+            date = f"{annee}{mois:02d}"
+
+            img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
+            gt_path = premier_fichier_dossier(f"{dir_gt}*{date}*.tif")
+
+            if img_path is None or gt_path is None:
+                s1.append(np.nan)
+                s0.append(np.nan)
+                continue
+
+            image = recuperer_image(img_path)
+            image_gt = recuperer_image(gt_path).astype(int)
+
+            start = time.time()
+            image_seg = fonction_segmentation(image)
+            end = time.time()
+            temps_execution.append(end - start)
+
+            s1.append(iou_score(image_seg, image_gt))
+            s0.append(score_0_meilleur(image_seg, image_gt))
+
+        fig, ax1 = plt.subplots(figsize=(8, 3))
+        ax1.plot(x, s1, marker="o", color="blue", label="Score (1 = meilleur)")
+        ax1.set_ylim(0, 1)
+        ax1.set_xticks(x)
+        ax1.set_xticklabels(mois_labels)
+        ax1.set_xlabel("Mois")
+        ax1.set_ylabel("Score (1 = meilleur)")
+        ax1.grid(True, alpha=0.3)
+
+        ax2 = ax1.twinx()
+        ax2.plot(x, s0, marker="o", color="red", label="Score (0 = meilleur)")
+        ax2.set_ylabel("Score (0 = meilleur)")
+
+        h1, l1 = ax1.get_legend_handles_labels()
+        h2, l2 = ax2.get_legend_handles_labels()
+        ax1.legend(h1 + h2, l1 + l2, loc="lower center", ncol=2)
+
+        plt.title(f"{fonction_segmentation.__name__} — Zone {zone} — {annee}")
+        plt.tight_layout()
+        plt.savefig(f"{DOSSIER_SORTIE}/scores_zone{zone}_2courbes_{fonction_segmentation.__name__}_{annee}.png",
+                    dpi=resolution)
+        plt.show()
+
+    if len(temps_execution) > 0:
+        print(f"temps d'éxécution moyen : {round(float(np.mean(temps_execution)), 3)} s")
+
+
+def graphe_scores_mensuels_2courbes_8zones_4ans(fonction_segmentation: Callable[[MaskedArray], ndarray],
+                                               annees: list[int] = [2021, 2022, 2023, 2024],
+                                               mean_monthly: bool = True,
+                                               resolution: int = 250,
+                                               figsize: tuple[int, int] = (18, 16)) -> None:
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import time
+    from manipulation_images_tif import premier_fichier_dossier, recuperer_image, DOSSIER_SORTIE
+
+    def _to_binary(a):
+        if hasattr(a, "filled"):
+            a = a.filled(0)
+        return (a > 0).astype(np.uint8)
+
+    def iou_score(pred, gt):
+        p = _to_binary(pred).ravel()
+        g = _to_binary(gt).ravel()
+        inter = np.sum((p == 1) & (g == 1))
+        union = np.sum((p == 1) | (g == 1))
+        return 1.0 if union == 0 else inter / union
+
+    def score_0_meilleur(pred, gt):
+        if "distance_hamming" in globals():
+            return distance_hamming(pred, gt)
+        if "difference_aire" in globals():
+            return difference_aire(pred, gt)
+        if "fausse_detection" in globals():
+            return fausse_detection(pred, gt)
+        return np.nan
+
+    mois_labels = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"]
+    x = np.arange(1, 13)
+
+    n_years = len(annees)
+    fig, axes = plt.subplots(8, n_years, figsize=figsize, sharex=True)
+    if n_years == 1:
+        axes = axes.reshape(8, 1)
+
+    temps_execution = []
+
+    for j, annee in enumerate(annees):
+        for i, zone in enumerate(range(1, 9)):
+            ax = axes[i, j]
+
+            dir_oasis = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
+            dir_gt = f'./GroundTruth_DYN/GroundTruth_DYN/Test_zone{zone}/'
+
+            s1, s0 = [], []
+
+            for mois in range(1, 13):
+                date = f"{annee}{mois:02d}"
+
+                img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
+                gt_path = premier_fichier_dossier(f"{dir_gt}*{date}*.tif")
+
+                if img_path is None or gt_path is None:
+                    s1.append(np.nan)
+                    s0.append(np.nan)
+                    continue
+
+                image = recuperer_image(img_path)
+                image_gt = recuperer_image(gt_path).astype(int)
+
+                start = time.time()
+                image_seg = fonction_segmentation(image)
+                end = time.time()
+                temps_execution.append(end - start)
+
+                s1.append(iou_score(image_seg, image_gt))
+                s0.append(score_0_meilleur(image_seg, image_gt))
+
+            ax.plot(x, s1, marker="o", color="blue")
+            ax.set_ylim(0, 1)
+            ax.grid(True, alpha=0.3)
+
+            ax2 = ax.twinx()
+            ax2.plot(x, s0, marker="o", color="red")
+
+            ax.set_xticks(x)
+            if i == 7:
+                ax.set_xticklabels(mois_labels, rotation=45, ha="right")
+            else:
+                ax.set_xticklabels([])
+
+            if i == 0:
+                ax.set_title(f"{annee}", fontsize=10)
+
+            if j == 0:
+                ax.set_ylabel(f"Zone {zone}\n(1 meilleur)", fontsize=9)
+            else:
+                ax.set_ylabel("")
+
+            if j == n_years - 1:
+                ax2.set_ylabel("(0 meilleur)", fontsize=9)
+            else:
+                ax2.set_ylabel("")
+                ax2.set_yticklabels([])
+
+    fig.suptitle(f"{fonction_segmentation.__name__} — Scores mensuels par zone et par année", y=0.995)
+    plt.tight_layout(rect=[0, 0, 1, 0.98])
+    plt.savefig(f"{DOSSIER_SORTIE}/scores_8zones_4ans_2courbes_{fonction_segmentation.__name__}.png", dpi=resolution)
+    plt.show()
+
+    if len(temps_execution) > 0:
+        print(f"temps d'éxécution moyen : {round(float(np.mean(temps_execution)), 3)} s")
+
+
+
+
+
 
 if __name__ == "__main__": # tests
 
 
-    def segmentation_test(image : MaskedArray) -> ndarray:
+    def segmentation_parfaite(image : MaskedArray) -> ndarray:
 
-        image_ref = image_reference_binaire(recuperer_image("GroundTruth_DYN/Test_zone2/Var_202108.tif"))
+        image_ref = recuperer_image("GroundTruth_DYN/GroundTruth_DYN/Test_zone2/Var_202108.tif").astype(int)
 
         return image_ref
 
 
     image_ref = recuperer_images(zone = 2, selected_dates=['20210816'])[0]
     #image_ref = recuperer_image("./Data/Test_zone6/OASIS/s1a_fusion_ASC_161_20210118_oasis_VV_Offset55_Test_zone6.tif")
-    #image_segmentee = segmentation_test(image_ref)
-    #test_segmentation(image_ref, segmentation_test)
+    #image_segmentee = segmentation_parfaite(image_ref)
 
-    tests_segmentation(segmentation_test)
-    moyenne_scores_annees(segmentation_test)
+    #test_segmentation(image_ref, segmentation_parfaite)
+    #tests_segmentation(segmentation_parfaite)
+    #moyenne_scores(segmentation_parfaite)
+    #graphique_scores_par_annee(segmentation_parfaite)
+    #graphique_scores_par_zone_courbes(segmentation_parfaite)
+    
+
+    
 
 
 
