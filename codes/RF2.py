@@ -44,7 +44,7 @@ def train_random_forest(images : list[MaskedArray], masks : list[MaskedArray]) -
         max_depth=10,
         random_state=0,
         n_jobs=5,
-        verbose=2 #2
+        verbose=0 # 2
     )
     model.fit(x_train, y_train)
 
@@ -107,7 +107,7 @@ def load_model(filemane : str) -> RandomForestClassifier:
 
 if __name__ == "__main__":
 
-
+    """
     images, masks = load_training_data(annees=[2021,2022])
     print(f"nombre d'images : {len(images)}/{len(masks)}")
 
@@ -118,14 +118,17 @@ if __name__ == "__main__":
     print(f"temps d'entrainement {round(end-start,3)} secondes")
    
     save_model(model,"entrainement RF 2021-2022")
+    """
 
+    model = load_model("entrainement RF 2021-2022")
 
     def segmentation_random_forest(image : np.ma.MaskedArray) -> np.ndarray:
 
         return predict_segmentation(model, image)
-
+    
     #image_test = recuperer_images(mean_monthly=True,zone=5,selected_dates=['202407'])[0]
     #test_segmentation(image_test, segmentation_random_forest)
 
     #tests_segmentation(segmentation_random_forest,annee=2023)
-    #moyenne_scores_annees(segmentation_random_forest, annees=[2023,2024])
+    moyenne_scores_annees(segmentation_random_forest, annees=[2023,2024])
+    graphe_scores_mensuels_2courbes_8zones_4ans(segmentation_random_forest)
