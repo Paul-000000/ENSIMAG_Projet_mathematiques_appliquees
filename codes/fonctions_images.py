@@ -1,11 +1,10 @@
 import rasterio, glob
 from matplotlib.colors import ListedColormap,LinearSegmentedColormap
 import numpy as np
-from numpy import ndarray
 from numpy.ma import MaskedArray
 
 
-DOSSIER_SORTIE = "resultats_tests"
+DOSSIER_SORTIE = "resultats"
 INDICATEUR_OASIS = LinearSegmentedColormap.from_list('mycmap', ['white','gray','blue', 'magenta','red'])
 INDICATEUR_BINAIRE = ListedColormap(['white', 'blue'])
 

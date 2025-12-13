@@ -7,6 +7,8 @@ from fonctions_images import *
 from fonctions_tests import *
 
 
+DOSSIER_ENTRAINEMENT = "entrainements RF"
+
 
 def extract_intensity_features(image : MaskedArray) -> ndarray:
     
@@ -21,7 +23,7 @@ def extract_intensity_features(image : MaskedArray) -> ndarray:
 
     return image_normalisee.reshape(-1, 1)  # Feature = intensité
 
-def train_random_forest(images : list[MaskedArray], masks : list[MaskedArray]) -> RandomForestClassifier:
+def train_random_forest(images : list[MaskedArray], masks : list[MaskedArray], nb_arbres : int = 20, profondeur_max_arbre : int = 10) -> RandomForestClassifier:
 
     x_train = []
     y_train = []
@@ -38,14 +40,14 @@ def train_random_forest(images : list[MaskedArray], masks : list[MaskedArray]) -
     x_train = np.vstack(x_train)
     y_train = np.hstack(y_train)
 
-    print(f"Taille dataset entraînement : {x_train.shape, y_train.shape}")
+    print(f"Taille dataset entraînement : {x_train.shape[0]}/{y_train.shape[0]}")
 
     model = RandomForestClassifier(
-        n_estimators=20,
-        max_depth=10,
+        n_estimators=nb_arbres,
+        max_depth=profondeur_max_arbre,
         random_state=0,
         n_jobs=-1,
-        verbose=0 # 2
+        verbose=2 # 2
     )
     model.fit(x_train, y_train)
 
@@ -98,30 +100,35 @@ def load_training_data(annees : list[int] = [2021]) -> tuple[list[MaskedArray],l
 
 def save_model(model : RandomForestClassifier, filemane : str) -> None:
 
-    joblib.dump(model, f"{DOSSIER_SORTIE}/{filemane}.pkl")
+    joblib.dump(model, f"{DOSSIER_SORTIE}/{DOSSIER_ENTRAINEMENT}/{filemane}.pkl")
 
 def load_model(filemane : str) -> RandomForestClassifier:
 
-    return joblib.load(f"{DOSSIER_SORTIE}/{filemane}.pkl")
+    return joblib.load(f"{DOSSIER_SORTIE}/{DOSSIER_ENTRAINEMENT}/{filemane}.pkl")
 
 
 
 if __name__ == "__main__":
 
-    """
-    images, masks = load_training_data(annees=[2021,2022])
-    print(f"nombre d'images : {len(images)}/{len(masks)}")
+    entrainement = False
+    nom_entrainement = "entrainement RF 2021-2022"
 
-    start = time.time()
-    model = train_random_forest(images, masks)
-    end=time.time()
+    if entrainement :
 
-    print(f"temps d'entrainement {round(end-start,3)} secondes")
-   
-    save_model(model,"entrainement RF 2021-2022")
-    """
+        images, masks = load_training_data(annees=[2021,2022])
+        #images, masks = load_training_images()
+        print(f"nombre d'images : {len(images)}/{len(masks)}")
 
-    model = load_model("entrainement RF 2021-2022")
+        start = time.time()
+        model = train_random_forest(images, masks, nb_arbres=150, profondeur_max_arbre=15)
+        end=time.time()
+
+        print(f"temps d'entrainement {round(end-start,3)} secondes")
+    
+        save_model(model, nom_entrainement)
+    
+
+    model = load_model(nom_entrainement)
 
     def segmentation_random_forest(image : np.ma.MaskedArray) -> np.ndarray:
 
@@ -132,4 +139,4 @@ if __name__ == "__main__":
 
     #tests_segmentation(segmentation_random_forest,annee=2023)
     moyenne_scores_annees(segmentation_random_forest, annees=[2023,2024])
-    graphe_scores(segmentation_random_forest)
+    #graphe_scores(segmentation_random_forest, annees=[2023,2024])

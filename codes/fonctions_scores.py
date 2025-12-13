@@ -9,6 +9,9 @@ from sklearn.metrics import accuracy_score
 from fonctions_images import *
 
 
+DOSSIER_SCORES = "scores"
+
+
 # calculs des scores
 def distance_hamming(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 0 signifie parfait
     
@@ -200,8 +203,7 @@ Similarité structurelle moyenne  : {round(np.nanmean(ssim_vals),3)}
         
         f.write(resultat)
 
-def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray],
-                        annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
+def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray],annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
 
     temps_execution = []
 
@@ -274,7 +276,7 @@ Similarité structurelle moyenne  : {round(np.nanmean(ssim_vals), 3)}
 
     print(resultat)
 
-    with open(f"{DOSSIER_SORTIE}/score_{fonction_segmentation.__name__}.txt", "w") as f:
+    with open(f"{DOSSIER_SORTIE}/{DOSSIER_SCORES}/score {fonction_segmentation.__name__}.txt", "w") as f:
         f.write(resultat)
 
 def scores_0(pred, gt):
@@ -305,7 +307,7 @@ def graphe_scores(fonction_segmentation: Callable[[MaskedArray], ndarray],
                   figsize: tuple[int, int] = (16, 14)) -> None:
     
     #mois_labels = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"]
-    x = np.arange(1, 49)
+    x = np.arange(1, len(annees) * 12 + 1)
     fig, axes = plt.subplots(8, 1, figsize=figsize, sharex=True)
 
     for i, zone in enumerate(range(1, 9)):
@@ -356,7 +358,7 @@ def graphe_scores(fonction_segmentation: Callable[[MaskedArray], ndarray],
 
     fig.suptitle(f"{fonction_segmentation.__name__} — Scores mensuels par zone et par année", y=0.995)
     plt.tight_layout(rect=[0, 0, 1, 0.98])
-    plt.savefig(f"{DOSSIER_SORTIE}/grahpe_scores {fonction_segmentation.__name__}.png", dpi=resolution)
+    plt.savefig(f"{DOSSIER_SORTIE}/graphe_scores {fonction_segmentation.__name__}.png", dpi=resolution)
     plt.show()
 
 

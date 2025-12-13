@@ -27,4 +27,4 @@ if __name__ == "__main__": # tests
     
     #tests_segmentation(segmentation_seuillage_fixe, annee=2021)
     #moyenne_scores_annees(segmentation_seuillage_fixe)
-    graphe_scores(segmentation_seuillage_fixe)
+    graphe_scores(segmentation_seuillage_fixe, annees=[2023,2024])
