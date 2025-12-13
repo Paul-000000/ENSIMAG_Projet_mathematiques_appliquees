@@ -1,5 +1,6 @@
-import rasterio, glob
+import rasterio, glob, geopandas
 from matplotlib.colors import ListedColormap,LinearSegmentedColormap
+import matplotlib.pyplot as plt
 import numpy as np
 from numpy.ma import MaskedArray
 
@@ -64,6 +65,19 @@ def image_reference_binaire(image_ref : MaskedArray) -> MaskedArray:
     image_ref[image_ref < 1] = 0
     return image_ref
 
+def afficher_image(image : MaskedArray, cmap = INDICATEUR_OASIS) -> None:
+
+    plt.imshow(image, cmap=cmap)
+    plt.colorbar()
+    plt.show()
+
+def afficher_forme(path : str) -> None:
+
+    shp = geopandas.read_file(path)
+    _, ax = plt.subplots(figsize=(8, 8))
+    shp.plot(ax=ax, edgecolor="black", facecolor="none")
+    plt.show()
+
 
 # autre fonction intermédiaire
 def premier_fichier_dossier(path : str) -> str | None :
@@ -80,4 +94,8 @@ if __name__ == "__main__": # tests
 
     image_ref = recuperer_images(zone = 2, selected_dates=['20210816'])[0]
     image_ref = recuperer_image("./Data/Test_zone6/OASIS/s1a_fusion_ASC_161_20210118_oasis_VV_Offset55_Test_zone6.tif")
+
+    #afficher_forme("./GroundTruth_optiques/GroundTruth_S2/Lacs_zone5_S2-20240910.shp")
+    #*image = recuperer_image("./NDWI_colocalise_avec_sar/Colocated_Images/Zone3/2024-07-22-00_00_2024-07-22-23_59_Sentinel-2_L2A_NDWI_colocate.tif")
+    #afficher_image(image)
     

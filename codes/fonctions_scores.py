@@ -203,7 +203,7 @@ Similarité structurelle moyenne  : {round(np.nanmean(ssim_vals),3)}
         
         f.write(resultat)
 
-def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray],annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
+def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray], annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
 
     temps_execution = []
 
