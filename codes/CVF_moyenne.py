@@ -1,6 +1,6 @@
 from scipy.ndimage import gaussian_filter
 from skimage.segmentation import chan_vese
-from codes.fonctions_images import *
+from fonctions_images import *
 from numpy import ndarray
 import numpy as np
 from fonctions_images import *
@@ -59,5 +59,5 @@ if __name__ == "__main__": # tests
     #test_segmentation(image, segmentatiosegmentation_chan_vese_moyennen_chan_vese, "image OASIS du 16/08/2021","Segmentation Chan-Vese")
     #tests_segmentation(segmentation_chan_vese_moyenne, annee=2021, mean_monthly=False)
 
-    tests_segmentation(segmentation_chan_vese_moyenne)
+    #tests_segmentation(segmentation_chan_vese_moyenne)
     moyenne_scores_annees(segmentation_chan_vese_moyenne)

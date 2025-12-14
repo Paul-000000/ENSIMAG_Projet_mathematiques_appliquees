@@ -3,6 +3,7 @@ import numpy as np
 from os import listdir
 from scipy.ndimage import gaussian_filter, uniform_filter
 from skimage.exposure import rescale_intensity
+from seuilF import segmentation_seuillage_fixe
 from sklearn.ensemble import RandomForestClassifier
 from fonctions_images import *
 from fonctions_tests import *
@@ -20,20 +21,11 @@ def extract_features(image : MaskedArray) -> ndarray:
     image_filtered = gaussian_filter(image_gray, sigma=2)
     image_normalisee = rescale_intensity(image_filtered, in_range=(np.min(image_filtered),np.max(image_filtered)),out_range=(0,1))
 
-    region_locale = 20
-    moyenne_locale = uniform_filter(image_gray, size=region_locale)
-    variance_locale = uniform_filter(image_gray**2, size=region_locale) - moyenne_locale**2
-
-    features = np.stack([
-        
-        image_normalisee,
-        variance_locale,
-
-    ], axis=-1)
+    features = np.stack([image_normalisee], axis=-1)
 
     return features.reshape(-1, features.shape[-1])
 
-def train_random_forest(images : list[MaskedArray], masks : list[MaskedArray], colocated : list[MaskedArray], nb_arbres : int = 20, profondeur_max_arbre : int = 10, pixels_min_feuilles : int = 1) -> RandomForestClassifier:
+def train_random_forest(images : list[MaskedArray], masks : list[MaskedArray],  nb_arbres : int = 20, profondeur_max_arbre : int = 10, pixels_min_feuilles : int = 1) -> RandomForestClassifier:
 
     x_train = []
     y_train = []
@@ -124,7 +116,7 @@ def load_colocated_data() -> list[MaskedArray]:
         dir = f"./NDWI_colocalise_avec_sar/Colocated_Images/Zone{zone}"
         image_zone = []
 
-        for chemin in listdir(dir)[:6]:
+        for chemin in listdir(dir):
             image_zone.append(recuperer_image(chemin))
 
         images.append(image_zone)
@@ -149,19 +141,19 @@ if __name__ == "__main__":
     if entrainement :
 
         images, masks = load_training_data(annees=[2021,2022])
-        colocated = load_colocated_data()
+        #colocated = load_colocated_data()
 
         #images, masks = load_training_images()
         print(f"nombre d'images : {len(images)}/{len(masks)}")
 
         start = time.time()
-        model = train_random_forest(images, masks, colocated, nb_arbres=20, profondeur_max_arbre=10, pixels_min_feuilles=1)
+        model = train_random_forest(images, masks, nb_arbres=20, profondeur_max_arbre=10, pixels_min_feuilles=1)
         end=time.time()
 
         print(f"temps d'entrainement {round(end-start,3)} secondes")
     
         save_model(model, nom_entrainement)
-    
+
 
     model = load_model(nom_entrainement)
     verify_features(model)
@@ -173,6 +165,9 @@ if __name__ == "__main__":
     #image_test = recuperer_images(mean_monthly=True,zone=5,selected_dates=['202407'])[0]
     #test_segmentation(image_test, segmentation_random_forest)
 
+    # tester la methode des seuils en feature
+    # essayer les images colocalisées avec les dates les plus proches 
+
     #tests_segmentation(segmentation_random_forest,annee=2023)
-    #moyenne_scores_annees(segmentation_random_forest, annees=[2023,2024])
-    graphe_scores(segmentation_random_forest, annees=[2023,2024])
+    moyenne_scores_annees(segmentation_random_forest, annees=[2023,2024])
+    #graphe_scores(segmentation_random_forest, annees=[2023,2024])

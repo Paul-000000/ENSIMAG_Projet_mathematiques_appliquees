@@ -8,6 +8,9 @@ from fonctions_images import *
 from fonctions_scores import *
 
 
+DOSSIER_GRAPHES_SEGMENTATION = "graphes segmentation"
+
+
 # affichage des tests
 def test_segmentation(image_ref : tuple[MaskedArray, MaskedArray | None], fonction_segmentation : Callable[[MaskedArray], ndarray]) -> None:
 
@@ -48,7 +51,7 @@ def test_segmentation(image_ref : tuple[MaskedArray, MaskedArray | None], foncti
     plt.tight_layout()
     plt.show()
 
-def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray], annee : int = 2021, mean_monthly : bool = True, resolution : int = 300) -> None:
+def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray], annee : int = 2021, mean_monthly : bool = True, resolution : int = 300) -> None:   
 
     if mean_monthly :
         fig, plots = plt.subplots(24,12,figsize=(10, 14))
@@ -132,7 +135,7 @@ def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray],
     print("affichage et sauvegarde du graphique")
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plt.savefig(f"{DOSSIER_SORTIE}/{fonction_segmentation.__name__}_{annee}.png", dpi=resolution)
+    plt.savefig(f"{DOSSIER_SORTIE}/{DOSSIER_GRAPHES_SEGMENTATION}/{fonction_segmentation.__name__}_{annee}.png", dpi=resolution)
     plt.show()
 
 

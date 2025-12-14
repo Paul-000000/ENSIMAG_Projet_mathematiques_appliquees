@@ -40,5 +40,5 @@ if __name__ == "__main__": # tests
     #test_segmentation(image_ref, segmentation_chan_vese_seuil)
     
     #tests_segmentation(segmentation_chan_vese_seuil, annee=2021)
-    #moyenne_scores_annees(segmentation_chan_vese_seuil)
-    graphe_scores(segmentation_chan_vese_seuil, annees=[2023,2024])
+    moyenne_scores_annees(segmentation_chan_vese_seuil)
+    #graphe_scores(segmentation_chan_vese_seuil, annees=[2023,2024])

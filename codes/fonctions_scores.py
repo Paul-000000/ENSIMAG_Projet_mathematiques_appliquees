@@ -10,6 +10,7 @@ from fonctions_images import *
 
 
 DOSSIER_SCORES = "scores"
+DOSSIER_GRAPHES_SCORES = "graphes scores"
 
 
 # calculs des scores
@@ -127,82 +128,6 @@ def print_scores(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray):
     print(f"Corrélation : {round(score_correlation(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Similarité structurelle : {round(similarite_structurelle(image_segmentee_1, image_segmentee_2),3)}")
     
-def moyenne_scores(fonction_segmentation : Callable[[MaskedArray], ndarray], annee : int = 2021) -> None:
-    
-    temps_execution = []
-    
-    hamming_vals = []
-    diff_aire_vals = []
-    fausse_vals = []
-
-    vraie_vals = []
-    accuracy_vals = []
-    corr_vals = []
-    ssim_vals = []
-
-    for zone in range(1, 9):
-
-        print(f"segmentation Zone {zone}/8 ", end="")
-
-        dir_oasis = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
-        dir_gt = f'./GroundTruth_DYN/Test_zone{zone}/'
-
-        for mois in range(1, 13):
-
-            print(f".", end="")
-
-            date = f"{annee}{mois:02d}"
-            img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
-            
-            if img_path is None:               
-                continue
-
-            gt_path = premier_fichier_dossier(f"{dir_gt}*{date}*.tif")
-            
-            if gt_path is None: 
-                continue
-
-            image_oasis = recuperer_image(img_path)
-            image_gt = recuperer_image(gt_path).astype(int)
-
-            start = time.time()
-            image_seg = fonction_segmentation(image_oasis)
-            end = time.time()
-
-            temps_execution.append(end-start)
-
-            hamming_vals.append(distance_hamming(image_seg, image_gt))
-            diff_aire_vals.append(difference_aire(image_seg, image_gt))
-            fausse_vals.append(fausse_detection(image_seg, image_gt))
-
-            vraie_vals.append(vraie_detection(image_seg, image_gt))
-            accuracy_vals.append(score_precision(image_seg, image_gt))
-            corr_vals.append(score_correlation(image_seg, image_gt))
-            ssim_vals.append(similarite_structurelle(image_gt, image_gt))
-            
-        print()
-    
-    resultat = f"""
-Scores moyens sur l'année {annee} :
-
-Temps d'éxécution moyen          : {round(np.mean(temps_execution),3)}
-
-Distance de Hamming moyenne      : {round(np.nanmean(hamming_vals),3)}
-Différence d'aire moyenne        : {round(np.nanmean(diff_aire_vals),3)}
-Fausse détection moyenne         : {round(np.nanmean(fausse_vals),3)}
-    
-Vraie détection moyenne          : {round(np.nanmean(vraie_vals),3)}
-Score de précision moyen         : {round(np.nanmean(accuracy_vals),3)}
-Corrélation moyenne              : {round(np.nanmean(corr_vals),3)}
-Similarité structurelle moyenne  : {round(np.nanmean(ssim_vals),3)}
-"""
-
-    print(resultat)
-
-    with open(f"{DOSSIER_SORTIE}/score {fonction_segmentation.__name__}.txt", "w") as f:
-        
-        f.write(resultat)
-
 def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray], annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
 
     temps_execution = []
@@ -217,16 +142,17 @@ def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray
     ssim_vals = []
 
     for annee in annees:
+
+        print(f"Année {annee} ", end="")
+
         for zone in range(1, 9):
 
-            print(f"segmentation Zone {zone}/8 ", end="")
+            print(f".", end="")
 
             dir_oasis = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
             dir_gt = f'./GroundTruth_DYN/Test_zone{zone}/'
 
             for mois in range(1, 13):
-
-                print(f".", end="")
 
                 date = f"{annee}{mois:02d}"
                 img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
@@ -257,27 +183,42 @@ def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray
                 corr_vals.append(score_correlation(image_seg, image_gt))
                 ssim_vals.append(similarite_structurelle(image_seg, image_gt))
 
-            print()
+        print()
 
-    resultat = f"""
-Scores moyens sur toutes les années {annees} :
+    temps_execution_moyen = round(np.mean(temps_execution),3)
 
-Temps d'éxécution moyen          : {round(np.mean(temps_execution), 3)}
+    noms_scores_moyens = [
+        "Distance de Hamming\nmoyenne",
+        "Différence d'aire\nmoyenne",
+        "Fausse détection\nmoyenne",
+        "Vraie détection\nmoyenne",
+        "Score de précision\nmoyen",
+        "Corrélation\nmoyenne",
+        "Similarité structurelle\nmoyenne"
+    ]
 
-Distance de Hamming moyenne      : {round(np.nanmean(hamming_vals), 3)}
-Différence d'aire moyenne        : {round(np.nanmean(diff_aire_vals), 3)}
-Fausse détection moyenne         : {round(np.nanmean(fausse_vals), 3)}
+    scores_moyens = [
+        round(np.nanmean(hamming_vals), 3),
+        round(np.nanmean(diff_aire_vals), 3),
+        round(np.nanmean(fausse_vals), 3),
+        round(np.nanmean(vraie_vals), 3),
+        round(np.nanmean(accuracy_vals), 3),
+        round(np.nanmean(corr_vals), 3),
+        round(np.nanmean(ssim_vals), 3)
+    ]
 
-Vraie détection moyenne          : {round(np.nanmean(vraie_vals), 3)}
-Score de précision moyen         : {round(np.nanmean(accuracy_vals), 3)}
-Corrélation moyenne              : {round(np.nanmean(corr_vals), 3)}
-Similarité structurelle moyenne  : {round(np.nanmean(ssim_vals), 3)}
-"""
+    for i in range(len(noms_scores_moyens)):
+        noms_scores_moyens[i] = noms_scores_moyens[i] + "\n" + str(scores_moyens[i])  
 
-    print(resultat)
+    plt.figure(figsize=(18, 7))
+    plt.bar(noms_scores_moyens, scores_moyens, color=['red', 'red', 'red', 'blue', 'blue', 'blue', 'blue', 'blue'])
+    plt.ylabel("Score moyen")
+    plt.title(f"Scores moyens sur les années {annees}\nTemps d'éxécution moyen : {temps_execution_moyen} secondes")
+    plt.savefig(f"{DOSSIER_SORTIE}/{DOSSIER_SCORES}/score {fonction_segmentation.__name__}.png", dpi=150)
+    plt.ylim(0, 1)
+    plt.tight_layout()
+    plt.show()
 
-    with open(f"{DOSSIER_SORTIE}/{DOSSIER_SCORES}/score {fonction_segmentation.__name__}.txt", "w") as f:
-        f.write(resultat)
 
 def scores_0(pred, gt):
 
@@ -306,7 +247,6 @@ def graphe_scores(fonction_segmentation: Callable[[MaskedArray], ndarray],
                   resolution: int = 250,
                   figsize: tuple[int, int] = (16, 14)) -> None:
     
-    #mois_labels = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"]
     x = np.arange(1, len(annees) * 12 + 1)
     fig, axes = plt.subplots(8, 1, figsize=figsize, sharex=True)
 
@@ -358,7 +298,7 @@ def graphe_scores(fonction_segmentation: Callable[[MaskedArray], ndarray],
 
     fig.suptitle(f"{fonction_segmentation.__name__} — Scores mensuels par zone et par année", y=0.995)
     plt.tight_layout(rect=[0, 0, 1, 0.98])
-    plt.savefig(f"{DOSSIER_SORTIE}/graphe_scores {fonction_segmentation.__name__}.png", dpi=resolution)
+    plt.savefig(f"{DOSSIER_SORTIE}/{DOSSIER_GRAPHES_SCORES}/graphe_scores {fonction_segmentation.__name__}.png", dpi=resolution)
     plt.show()
 
 
@@ -376,5 +316,5 @@ if __name__ == "__main__": # tests
     image_segmentee = segmentation_test(image_ref)
 
 
-    #moyenne_scores(segmentation_test)
-    graphe_scores(segmentation_test)
+    moyenne_scores_annees(segmentation_test)
+    #graphe_scores(segmentation_test)
