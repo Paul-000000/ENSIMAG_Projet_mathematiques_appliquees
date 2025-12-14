@@ -92,10 +92,9 @@ def premier_fichier_dossier(path : str) -> str | None :
 
 if __name__ == "__main__": # tests
 
-    image_ref = recuperer_images(zone = 2, selected_dates=['20210816'])[0]
-    image_ref = recuperer_image("./Data/Test_zone6/OASIS/s1a_fusion_ASC_161_20210118_oasis_VV_Offset55_Test_zone6.tif")
+    #image_ref = recuperer_images(zone = 2, selected_dates=['20210816'])[0]
+    #image_ref = recuperer_image("./Data/Test_zone6/OASIS/s1a_fusion_ASC_161_20210118_oasis_VV_Offset55_Test_zone6.tif")
 
-    #afficher_forme("./GroundTruth_optiques/GroundTruth_S2/Lacs_zone5_S2-20240910.shp")
-    #*image = recuperer_image("./NDWI_colocalise_avec_sar/Colocated_Images/Zone3/2024-07-22-00_00_2024-07-22-23_59_Sentinel-2_L2A_NDWI_colocate.tif")
-    #afficher_image(image)
+    image = recuperer_image("./NDWI_colocalise_avec_sar/Colocated_Images/Zone5/2024-07-02-00_00_2024-07-02-23_59_Sentinel-2_L2A_NDWI_colocate.tif")
+    afficher_image(image, cmap='gray')
     

@@ -127,7 +127,7 @@ def print_scores(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray):
     print(f"Score de précision : {round(score_precision(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Corrélation : {round(score_correlation(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Similarité structurelle : {round(similarite_structurelle(image_segmentee_1, image_segmentee_2),3)}")
-    
+
 def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray], annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
 
     temps_execution = []

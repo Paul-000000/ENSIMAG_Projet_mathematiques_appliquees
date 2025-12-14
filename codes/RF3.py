@@ -8,6 +8,9 @@ from fonctions_tests import *
 from skimage.feature import local_binary_pattern
 
 
+DOSSIER_ENTRAINEMENT = "entrainements RF"
+
+
 def extract_intensity_features(image : MaskedArray) -> ndarray:
     
     image_no_nan = image.filled(np.nan)
@@ -169,12 +172,11 @@ def load_training_data(annees : list[int] = [2021],
 
 def save_model(model : RandomForestClassifier, filemane : str) -> None:
 
-    joblib.dump(model, f"{DOSSIER_SORTIE}/{filemane}.pkl")
+    joblib.dump(model, f"{DOSSIER_SORTIE}/{DOSSIER_ENTRAINEMENT}/{filemane}.pkl")
 
 def load_model(filemane : str) -> RandomForestClassifier:
 
-    return joblib.load(f"{DOSSIER_SORTIE}/{filemane}.pkl")
-
+    return joblib.load(f"{DOSSIER_SORTIE}/{DOSSIER_ENTRAINEMENT}/{filemane}.pkl")
 
 
 if __name__ == "__main__":
