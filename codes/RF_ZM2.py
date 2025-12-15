@@ -1,6 +1,5 @@
-import joblib,os
+import joblib
 import numpy as np
-from os import listdir
 from scipy.ndimage import gaussian_filter, uniform_filter
 from skimage.exposure import rescale_intensity
 from seuilF import segmentation_seuillage_fixe
@@ -9,10 +8,10 @@ from fonctions_images import *
 from fonctions_tests import *
 
 
-DOSSIER_ENTRAINEMENT = "entrainements RF"
+DOSSIER_ENTRAINEMENT = "modeles RF"
 
 
-def extract_features(image : MaskedArray, colocated : MaskedArray, mois : int) -> ndarray:
+def extract_features(image : MaskedArray, colocated : MaskedArray, mois : int, zone : int) -> ndarray:
     
     image_no_nan = image.filled(np.nan)
     image_no_nan = np.nan_to_num(image_no_nan, nan=0) # np.nanmean(image_no_nan)
@@ -27,12 +26,14 @@ def extract_features(image : MaskedArray, colocated : MaskedArray, mois : int) -
     
     seuil = segmentation_seuillage_fixe(image)
 
-    image_mois = np.full(image.shape, mois / 12)
+    image_mois = np.full(image.shape, (mois-1) / 11)
+    image_zone = np.full(image.shape, (zone-1) / 7)
 
     features = np.stack([
         
         colocated,
         image_mois,
+        image_zone,
         image_normalisee,
         variance_locale,
         seuil
@@ -41,7 +42,7 @@ def extract_features(image : MaskedArray, colocated : MaskedArray, mois : int) -
 
     return features.reshape(-1, features.shape[-1])
 
-def train_random_forest(images : list[list[list[MaskedArray]]], masks : list[list[list[MaskedArray]]], colocated : list[MaskedArray], nb_arbres : int = 20, profondeur_max_arbre : int = 10, pixels_min_feuilles : int = 1) -> RandomForestClassifier:
+def train_random_forest(images : list[list[list[MaskedArray]]], masks : list[list[list[MaskedArray]]], colocated : list[list[MaskedArray]], nb_arbres : int = 20, profondeur_max_arbre : int = 10, pixels_min_feuilles : int = 1) -> RandomForestClassifier:
 
     x_train = []
     y_train = []
@@ -52,7 +53,7 @@ def train_random_forest(images : list[list[list[MaskedArray]]], masks : list[lis
 
             for img, mask in zip(images[zone -1][mois -1], masks[zone -1][mois -1]):
 
-                x = extract_features(img, colocated[zone -1], mois)
+                x = extract_features(img, colocated[zone -1][mois -1], mois, zone)
                 y = mask.filled(0).astype(int).reshape(-1) # classes 0/1
 
                 x_train.append(x)
@@ -61,7 +62,7 @@ def train_random_forest(images : list[list[list[MaskedArray]]], masks : list[lis
     x_train = np.vstack(x_train)
     y_train = np.hstack(y_train)
 
-    print(f"Taille dataset entraînement : {x_train.shape[0]}/{y_train.shape[0]}")
+    print(f"Taille du dataset d'entraînement : {x_train.shape[0]}")
 
     model = RandomForestClassifier(
         n_estimators=nb_arbres,
@@ -75,9 +76,9 @@ def train_random_forest(images : list[list[list[MaskedArray]]], masks : list[lis
 
     return model
 
-def predict_segmentation(model : RandomForestClassifier , image : MaskedArray, zone : MaskedArray, mois : int) -> ndarray:
+def predict_segmentation(model : RandomForestClassifier , image : MaskedArray, colocated : MaskedArray, mois : int, zone : int) -> ndarray:
 
-    x = extract_features(image, zone, mois)
+    x = extract_features(image, colocated, mois, zone)
     y_pred = model.predict(x)
     
     return y_pred.reshape(image.shape)
@@ -124,18 +125,8 @@ def load_training_data(annees : list[int] = [2021]) -> tuple[list[list[list[Mask
 
     return images_x, images_y
 
-def load_colocated_data() -> list[MaskedArray]:
+def load_colocated_data() -> list[list[MaskedArray]]:
     
-    images = []
-
-    for zone in range(1, 9):
-        
-        dir = f"./NDWI_colocalise_avec_sar/Colocated_Images/Zone{zone}"
-        images.append(recuperer_image(os.path.join(dir,listdir(dir)[0])))
-
-    return images
-
-    """
     annee = 2024
     images = [[None for _ in range(12)] for _ in range(8)]
     
@@ -144,29 +135,25 @@ def load_colocated_data() -> list[MaskedArray]:
         dir = f"./NDWI_colocalise_avec_sar/Colocated_Images/Zone{zone}"
         for mois in range(1,13):
 
-            chemin = premier_fichier_dossier(f"{dir}/*{annee}-{mois}*")
+            chemin = premier_fichier_dossier(f"{dir}/*{annee}-{mois:02d}*")
 
             if chemin is not None :
-                images[zone -1][mois] = recuperer_image(chemin)
+                images[zone -1][mois -1] = recuperer_image(chemin)
     
-    for zone in range(1, 9):
+    for zone in range(8):
+        mois_valides = [i for i, img in enumerate(images[zone]) if img is not None]
 
-        i = 0
-        while images[zone -1][i] is None:
-            i += 1
+        if not mois_valides:
+            continue
 
-        j = i
-        while images[zone -1][j] is not None:
-            j += 1
-        
-        for mois in range(i):
-            images[zone -1][mois] = images[zone -1][i].copy()
-
-        for mois in range(j -1,13):
-            images[zone -1][mois] = images[zone -1][i].copy()
+        for mois in range(12):
+            if images[zone][mois] is None:
+                
+                plus_proche = min(mois_valides, key=lambda x: abs(x - mois))
+                images[zone][mois] = images[zone][plus_proche].copy()
 
     return images
-    """
+
 def save_model(model : RandomForestClassifier, filemane : str) -> None:
 
     joblib.dump(model, f"{DOSSIER_SORTIE}/{DOSSIER_ENTRAINEMENT}/{filemane}.pkl")
@@ -175,19 +162,28 @@ def load_model(filemane : str) -> RandomForestClassifier:
 
     return joblib.load(f"{DOSSIER_SORTIE}/{DOSSIER_ENTRAINEMENT}/{filemane}.pkl")
 
+def nb_elements(liste : list[list[list[MaskedArray]]]) -> int :
+    
+    n = 0
+    for l1 in liste :
+        for l2 in l1 :
+            n += len(l2)
+
+    return n
+
 
 
 if __name__ == "__main__":
 
-    entrainement = False
-    nom_entrainement = "entrainement RF 2023-2024 zone mois"
+    entrainement = True
+    nom_entrainement = "modele RF ZM2 2023-2024"
     colocated = load_colocated_data()
 
     if entrainement :
 
         images, masks = load_training_data(annees=[2023,2024])
         
-        print(f"nombre d'images : {len(images)}/{len(masks)}")
+        print(f"images d'entraînement : {nb_elements(images)}")
 
         start = time.time()
         model = train_random_forest(images, masks, colocated, nb_arbres=20, profondeur_max_arbre=10, pixels_min_feuilles=1)
@@ -202,12 +198,12 @@ if __name__ == "__main__":
     verify_features(model)
 
 
-    def segmentation_random_forest_zone_mois(image : MaskedArray, zone : int, mois : int) -> ndarray:
+    def segmentation_random_forest_ZM2(image : MaskedArray, zone : int, mois : int) -> ndarray:
 
-        return predict_segmentation(model, image, colocated[zone -1], mois)
+        return predict_segmentation(model, image, colocated[zone -1][mois -1], mois, zone)
     
 
-    def moyenne_scores_annees_zone_mois(fonction_segmentation: Callable[[MaskedArray, int, int], ndarray], colocated : list[MaskedArray], annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
+    def moyenne_scores_annees_ZM(fonction_segmentation: Callable[[MaskedArray, int, int], ndarray], annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
 
         temps_execution = []
 
@@ -216,7 +212,6 @@ if __name__ == "__main__":
         fausse_vals = []
 
         vraie_vals = []
-        accuracy_vals = []
         corr_vals = []
         ssim_vals = []
 
@@ -259,7 +254,6 @@ if __name__ == "__main__":
                     fausse_vals.append(fausse_detection(image_seg, image_gt))
 
                     vraie_vals.append(vraie_detection(image_seg, image_gt))
-                    accuracy_vals.append(score_precision(image_seg, image_gt))
                     corr_vals.append(score_correlation(image_seg, image_gt))
                     ssim_vals.append(similarite_structurelle(image_seg, image_gt))
 
@@ -272,7 +266,6 @@ if __name__ == "__main__":
             "Différence d'aire\nmoyenne",
             "Fausse détection\nmoyenne",
             "Vraie détection\nmoyenne",
-            "Score de précision\nmoyen",
             "Corrélation\nmoyenne",
             "Similarité structurelle\nmoyenne"
         ]
@@ -282,7 +275,6 @@ if __name__ == "__main__":
             round(np.nanmean(diff_aire_vals), 3),
             round(np.nanmean(fausse_vals), 3),
             round(np.nanmean(vraie_vals), 3),
-            round(np.nanmean(accuracy_vals), 3),
             round(np.nanmean(corr_vals), 3),
             round(np.nanmean(ssim_vals), 3)
         ]
@@ -291,7 +283,7 @@ if __name__ == "__main__":
             noms_scores_moyens[i] = noms_scores_moyens[i] + "\n" + str(scores_moyens[i])  
 
         plt.figure(figsize=(18, 7))
-        plt.bar(noms_scores_moyens, scores_moyens, color=['red', 'red', 'red', 'blue', 'blue', 'blue', 'blue', 'blue'])
+        plt.bar(noms_scores_moyens, scores_moyens, color=['red', 'red', 'red', 'blue', 'blue', 'blue'])
         plt.ylabel("Score moyen")
         plt.title(f"Scores moyens sur les années {annees}\nTemps d'éxécution moyen : {temps_execution_moyen} secondes")
         plt.savefig(f"{DOSSIER_SORTIE}/{DOSSIER_SCORES}/score {fonction_segmentation.__name__}.png", dpi=150)
@@ -299,7 +291,7 @@ if __name__ == "__main__":
         plt.tight_layout()
         plt.show()
 
-    def tests_segmentation_zone_mois(fonction_segmentation : Callable[[MaskedArray, int, int], ndarray], annee : int = 2021, mean_monthly : bool = True, resolution : int = 300) -> None:   
+    def tests_segmentation_ZM(fonction_segmentation : Callable[[MaskedArray, int, int], ndarray], annee : int = 2021, mean_monthly : bool = True, resolution : int = 300) -> None:   
 
         if mean_monthly :
             fig, plots = plt.subplots(24,12,figsize=(10, 14))
@@ -386,7 +378,7 @@ if __name__ == "__main__":
         plt.savefig(f"{DOSSIER_SORTIE}/{DOSSIER_GRAPHES_SEGMENTATION}/{fonction_segmentation.__name__}_{annee}.png", dpi=resolution)
         plt.show()
 
-    def graphe_scores_zone_mois(fonction_segmentation: Callable[[MaskedArray, int,int], ndarray],
+    def graphe_scores_ZM(fonction_segmentation: Callable[[MaskedArray, int, int], ndarray],
                     annees: list[int] = [2021, 2022, 2023, 2024],
                     mean_monthly: bool = True,
                     resolution: int = 250,
@@ -447,13 +439,7 @@ if __name__ == "__main__":
         plt.show()
 
 
-    #image_test = recuperer_images(mean_monthly=True,zone=5,selected_dates=['202407'])[0]
-    #test_segmentation(image_test, segmentation_random_forest)
-
-    # tester la methode des seuils en feature
-    # essayer les images colocalisées avec les dates les plus proches 
-
-    #tests_segmentation_zone_mois(segmentation_random_forest_zone_mois,annee=2021)
-    #moyenne_scores_annees_zone_mois(segmentation_random_forest_zone_mois, colocated, annees=[2021,2022])
-    graphe_scores_zone_mois(segmentation_random_forest_zone_mois, annees=[2021,2022])
+    tests_segmentation_ZM(segmentation_random_forest_ZM2,annee=2021)
+    moyenne_scores_annees_ZM(segmentation_random_forest_ZM2, annees=[2021,2022])
+    graphe_scores_ZM(segmentation_random_forest_ZM2, annees=[2021,2022])
 
