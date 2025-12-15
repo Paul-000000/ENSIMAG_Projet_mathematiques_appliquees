@@ -1,13 +1,10 @@
-import joblib
+
 import numpy as np
 from scipy.ndimage import gaussian_filter, uniform_filter
 from skimage.exposure import rescale_intensity
 from seuilF import segmentation_seuillage_fixe
 from sklearn.ensemble import RandomForestClassifier
 from fonctions_RF import *
-
-
-DOSSIER_ENTRAINEMENT = "modeles RF"
 
 
 def extract_features(image : MaskedArray, colocated : MaskedArray, mois : int, zone : int) -> ndarray:
@@ -147,41 +144,36 @@ def load_colocated_data() -> list[list[MaskedArray]]:
 
     return images
 
+def entrainer_modele(colocated : list, nom : str, annees : list[int] = [2023,2024], nb_arbres : int = 20, profondeur_max_arbre : int = 10, pixels_min_feuilles : int = 1) -> None:
+
+    images, masks = load_training_data(annees=annees)
+
+    print(f"images d'entraînement : {nb_elements(images)}")
+
+    start = time.time()
+    modele = train_random_forest(images, masks, colocated, nb_arbres=nb_arbres, profondeur_max_arbre=profondeur_max_arbre, pixels_min_feuilles=pixels_min_feuilles)
+    end=time.time()
+
+    print(f"temps d'entrainement {round(end-start,3)} secondes")
+
+    save_model(modele, nom)
+
+
+def segmentation_random_forest_ZM2(image : MaskedArray, modele : RandomForestClassifier, colocated : list, zone : int, mois : int) -> ndarray:
+
+        return predict_segmentation(modele, image, colocated[zone -1][mois -1], mois, zone)
 
 
 if __name__ == "__main__":
 
-    entrainement = True
-    nom_entrainement = "modele RF ZM2 2023-2024"
     colocated = load_colocated_data()
+    entrainer_modele(colocated, "modele RF ZM2 2023-2024")
 
-    if entrainement :
 
-        images, masks = load_training_data(annees=[2023,2024])
-        
-        print(f"images d'entraînement : {nb_elements(images)}")
-
-        start = time.time()
-        model = train_random_forest(images, masks, colocated, nb_arbres=20, profondeur_max_arbre=10, pixels_min_feuilles=1)
-        end=time.time()
-
-        print(f"temps d'entrainement {round(end-start,3)} secondes")
+    modele = load_model("modele RF ZM2 2023-2024")
+    verify_features(modele)
     
-        save_model(model, nom_entrainement)
 
-
-    model = load_model(nom_entrainement)
-    verify_features(model)
-
-
-    def segmentation_random_forest_ZM2(image : MaskedArray, zone : int, mois : int) -> ndarray:
-
-        return predict_segmentation(model, image, colocated[zone -1][mois -1], mois, zone)
-    
-    # patchs
-    # filtre lee
-
-    tests_segmentation_ZM(segmentation_random_forest_ZM2,annee=2021)
-    moyenne_scores_annees_ZM(segmentation_random_forest_ZM2, annees=[2021,2022])
-    graphe_scores_ZM(segmentation_random_forest_ZM2, annees=[2021,2022])
-
+    tests_segmentation_ZM(segmentation_random_forest_ZM2, modele, colocated, annee=2021)
+    moyenne_scores_annees_ZM(segmentation_random_forest_ZM2, modele, colocated, annees=[2021,2022])
+    graphe_scores_ZM(segmentation_random_forest_ZM2, modele, colocated, annees=[2021,2022])

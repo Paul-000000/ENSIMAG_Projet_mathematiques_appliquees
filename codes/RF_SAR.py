@@ -1,4 +1,3 @@
-import joblib
 import numpy as np
 from scipy.ndimage import gaussian_filter, uniform_filter
 from skimage.exposure import rescale_intensity
@@ -96,36 +95,35 @@ def load_training_data(annees : list[int] = [2021]) -> tuple[list[MaskedArray],l
 
     return images_x, images_y
 
+def entrainer_modele(nom : str, annees : list[int] = [2023,2024], nb_arbres : int = 20, profondeur_max_arbre : int = 10, pixels_min_feuilles : int = 1) -> None:
+
+    images, masks = load_training_data(annees=annees)
+
+    print(f"images d'entraînement : {nb_elements(images)}")
+
+    start = time.time()
+    modele = train_random_forest(images, masks, nb_arbres=nb_arbres, profondeur_max_arbre=profondeur_max_arbre, pixels_min_feuilles=pixels_min_feuilles)
+    end=time.time()
+
+    print(f"temps d'entrainement {round(end-start,3)} secondes")
+
+    save_model(modele, nom)
+
+
+def segmentation_random_forest_SAR(image : MaskedArray, modele : RandomForestClassifier, colocated : list = [], zone : int = -1, mois : int = -1) -> np.ndarray:
+
+        return predict_segmentation(modele, image)
 
 
 if __name__ == "__main__":
 
-    entrainement = True
-    nom_entrainement = "modele RF SAR 2023-2024"
-
-    if entrainement :
-
-        images, masks = load_training_data(annees=[2023,2024])
-
-        print(f"images d'entraînement : {nb_elements(images)}")
-
-        start = time.time()
-        model = train_random_forest(images, masks, nb_arbres=20, profondeur_max_arbre=10, pixels_min_feuilles=1)
-        end=time.time()
-
-        print(f"temps d'entrainement {round(end-start,3)} secondes")
-    
-        save_model(model, nom_entrainement)
-
-
-    model = load_model(nom_entrainement)
-    verify_features(model)
-
-    def segmentation_random_forest_SAR(image : np.ma.MaskedArray) -> np.ndarray:
-
-        return predict_segmentation(model, image)
+    entrainer_modele("modele RF SAR 2023-2024")
     
 
-    tests_segmentation(segmentation_random_forest_SAR,annee=2021)
-    moyenne_scores_annees(segmentation_random_forest_SAR, annees=[2021,2022])
-    graphe_scores(segmentation_random_forest_SAR, annees=[2021,2022])
+    modele = load_model("modele RF SAR 2023-2024")
+    verify_features(modele)
+
+    
+    tests_segmentation_ZM(segmentation_random_forest_SAR, modele, annee=2021)
+    moyenne_scores_annees_ZM(segmentation_random_forest_SAR, modele, annees=[2021,2022])
+    graphe_scores_ZM(segmentation_random_forest_SAR, modele, annees=[2021,2022])

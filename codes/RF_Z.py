@@ -1,4 +1,4 @@
-import joblib,os
+import os
 import numpy as np
 from os import listdir
 from scipy.ndimage import gaussian_filter, uniform_filter
@@ -113,37 +113,36 @@ def load_colocated_data() -> list[MaskedArray]:
 
     return images
 
+def entrainer_modele(colocated : list, nom : str, annees : list[int] = [2023,2024], nb_arbres : int = 20, profondeur_max_arbre : int = 10, pixels_min_feuilles : int = 1) -> None:
+
+    images, masks = load_training_data(annees=annees)
+
+    print(f"images d'entraînement : {nb_elements(images)}")
+
+    start = time.time()
+    modele = train_random_forest(images, masks, colocated, nb_arbres=nb_arbres, profondeur_max_arbre=profondeur_max_arbre, pixels_min_feuilles=pixels_min_feuilles)
+    end=time.time()
+
+    print(f"temps d'entrainement {round(end-start,3)} secondes")
+
+    save_model(modele, nom)
+
+
+def segmentation_random_forest_Z(image : MaskedArray, modele : RandomForestClassifier, colocated : list, zone : int, mois : int = -1) -> ndarray:
+
+        return predict_segmentation(modele, image, colocated[zone -1])
+
 
 if __name__ == "__main__":
 
-    entrainement = False
-    nom_entrainement = "modele RF Z 2023-2024"
     colocated = load_colocated_data()
-
-    if entrainement :
-
-        images, masks = load_training_data(annees=[2023,2024])
-        
-        print(f"images d'entraînement : {nb_elements(images)}")
-
-        start = time.time()
-        model = train_random_forest(images, masks, colocated, nb_arbres=20, profondeur_max_arbre=10, pixels_min_feuilles=1)
-        end=time.time()
-
-        print(f"temps d'entrainement {round(end-start,3)} secondes")
-    
-        save_model(model, nom_entrainement)
+    entrainer_modele(colocated, "modele RF Z 2023-2024")
 
 
-    model = load_model(nom_entrainement)
-    verify_features(model)
+    modele = load_model("modele RF Z 2023-2024")
+    verify_features(modele)
 
-    def segmentation_random_forest_Z(image : MaskedArray, zone : int) -> ndarray:
 
-        return predict_segmentation(model, image, colocated[zone -1])
-    
-
-    tests_segmentation_Z(segmentation_random_forest_Z,annee=2021)
-    moyenne_scores_annees_Z(segmentation_random_forest_Z, annees=[2021,2022])
-    graphe_scores_Z(segmentation_random_forest_Z, annees=[2021,2022])
-
+    tests_segmentation_ZM(segmentation_random_forest_Z, modele, colocated, annee=2021)
+    moyenne_scores_annees_ZM(segmentation_random_forest_Z, modele, colocated, annees=[2021,2022])
+    graphe_scores_ZM(segmentation_random_forest_Z, modele, colocated, annees=[2021,2022])
