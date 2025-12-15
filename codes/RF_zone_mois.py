@@ -68,7 +68,7 @@ def train_random_forest(images : list[list[list[MaskedArray]]], masks : list[lis
         max_depth=profondeur_max_arbre,
         min_samples_leaf=pixels_min_feuilles,
         random_state=0,
-        n_jobs=-1,
+        n_jobs=10,
         verbose=2 # 2
     )
     model.fit(x_train, y_train)
@@ -125,23 +125,48 @@ def load_training_data(annees : list[int] = [2021]) -> tuple[list[list[list[Mask
     return images_x, images_y
 
 def load_colocated_data() -> list[MaskedArray]:
-
+    
     images = []
 
     for zone in range(1, 9):
         
         dir = f"./NDWI_colocalise_avec_sar/Colocated_Images/Zone{zone}"
-        #image_zone = []
         images.append(recuperer_image(os.path.join(dir,listdir(dir)[0])))
-
-        #for chemin in listdir(dir):
-        #    print(chemin)
-        #    image_zone.append(recuperer_image(chemin))
-
-        #images.append(image_zone)
 
     return images
 
+    """
+    annee = 2024
+    images = [[None for _ in range(12)] for _ in range(8)]
+    
+    for zone in range(1, 9):
+        
+        dir = f"./NDWI_colocalise_avec_sar/Colocated_Images/Zone{zone}"
+        for mois in range(1,13):
+
+            chemin = premier_fichier_dossier(f"{dir}/*{annee}-{mois}*")
+
+            if chemin is not None :
+                images[zone -1][mois] = recuperer_image(chemin)
+    
+    for zone in range(1, 9):
+
+        i = 0
+        while images[zone -1][i] is None:
+            i += 1
+
+        j = i
+        while images[zone -1][j] is not None:
+            j += 1
+        
+        for mois in range(i):
+            images[zone -1][mois] = images[zone -1][i].copy()
+
+        for mois in range(j -1,13):
+            images[zone -1][mois] = images[zone -1][i].copy()
+
+    return images
+    """
 def save_model(model : RandomForestClassifier, filemane : str) -> None:
 
     joblib.dump(model, f"{DOSSIER_SORTIE}/{DOSSIER_ENTRAINEMENT}/{filemane}.pkl")
@@ -154,13 +179,13 @@ def load_model(filemane : str) -> RandomForestClassifier:
 
 if __name__ == "__main__":
 
-    entrainement = True
-    nom_entrainement = "entrainement RF 2021-2022 zone mois"
+    entrainement = False
+    nom_entrainement = "entrainement RF 2023-2024 zone mois"
     colocated = load_colocated_data()
 
     if entrainement :
 
-        images, masks = load_training_data(annees=[2021,2022])
+        images, masks = load_training_data(annees=[2023,2024])
         
         print(f"nombre d'images : {len(images)}/{len(masks)}")
 
@@ -177,12 +202,12 @@ if __name__ == "__main__":
     verify_features(model)
 
 
-    def segmentation_random_forest(image : MaskedArray, colocated : MaskedArray, mois : int) -> ndarray:
+    def segmentation_random_forest_zone_mois(image : MaskedArray, zone : int, mois : int) -> ndarray:
 
-        return predict_segmentation(model, image, colocated, mois)
+        return predict_segmentation(model, image, colocated[zone -1], mois)
     
 
-    def moyenne_scores_annees_zone_mois(fonction_segmentation: Callable[[MaskedArray, MaskedArray, int], ndarray], colocated : list[MaskedArray], annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
+    def moyenne_scores_annees_zone_mois(fonction_segmentation: Callable[[MaskedArray, int, int], ndarray], colocated : list[MaskedArray], annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
 
         temps_execution = []
 
@@ -224,7 +249,7 @@ if __name__ == "__main__":
                     image_gt = recuperer_image(gt_path).astype(int)
 
                     start = time.time()
-                    image_seg = fonction_segmentation(image_oasis, colocated[zone - 1], mois)
+                    image_seg = fonction_segmentation(image_oasis, zone, mois)
                     end = time.time()
 
                     temps_execution.append(end - start)
@@ -274,6 +299,153 @@ if __name__ == "__main__":
         plt.tight_layout()
         plt.show()
 
+    def tests_segmentation_zone_mois(fonction_segmentation : Callable[[MaskedArray, int, int], ndarray], annee : int = 2021, mean_monthly : bool = True, resolution : int = 300) -> None:   
+
+        if mean_monthly :
+            fig, plots = plt.subplots(24,12,figsize=(10, 14))
+
+        else :
+            fig, plots = plt.subplots(16,12,figsize=(12, 8))
+        
+        mois_annee = [
+            "Janvier",
+            "Février",
+            "Mars",
+            "Avril",
+            "Mai",
+            "Juin",
+            "Juillet",
+            "Août",
+            "Septembre",
+            "Octobre",
+            "Novembre",
+            "Décembre"
+        ]
+
+        plt.suptitle(f"Segmentation des Images pour l'Année {annee}", fontsize=16, fontweight='bold')
+        temps_execution = []
+
+        for zone in range(1,9):
+
+            print(f"segmentation Zone {zone}/8 ", end="")
+            dir = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
+
+            if mean_monthly :
+                dir_mean_monthly = f"./GroundTruth_DYN/Test_zone{zone}/"
+
+            for mois in range(1,13):
+                
+                print(f".", end="")
+
+                chemin_image = None
+                chemin_image_ref = None
+                date = f"{annee}{mois:02d}"
+                chemin_image = premier_fichier_dossier(f"{dir}*{date}*.tif")
+                
+                if mean_monthly :
+
+                    chemin_image_ref = premier_fichier_dossier(f"{dir_mean_monthly}*{date}*.tif")
+    
+                image = recuperer_image(chemin_image)
+
+                start = time.time()
+                image_segmentee = fonction_segmentation(image, zone, mois)
+                end = time.time()
+                temps_execution.append(end-start)
+                
+                if chemin_image_ref is None :
+                    plot_oasis = plots[(zone-1) * 2, mois-1]
+                    plot_segmente = plots[(zone-1) * 2 + 1, mois-1]
+
+                else :
+                    plot_oasis = plots[(zone-1) * 3, mois-1]
+                    plot_segmente = plots[(zone-1) * 3 + 1, mois-1]
+                    plot_ref = plots[(zone-1) * 3 + 2, mois-1]
+
+                    plot_ref.imshow(image_reference_binaire(recuperer_image(chemin_image_ref)), cmap=INDICATEUR_BINAIRE, origin='upper')
+                    plot_ref.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+                    
+                plot_oasis.imshow(image, cmap=INDICATEUR_OASIS, origin='upper')
+                plot_oasis.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+            
+                plot_segmente.imshow(image_segmentee, cmap=INDICATEUR_BINAIRE, origin='upper')
+                plot_segmente.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+                
+            print()
+
+        for zone in range(1,9):    
+            fig.text(0.02, 0.97 - (zone / 8) * 0.9, f"Zone {zone}", ha='center', va='center', rotation='vertical', fontsize=9, fontweight='bold')
+        
+        for mois in range(1,13):
+            fig.text((mois / 12) * 0.98 -0.025, 0.93, f"{mois_annee[mois - 1]}", ha='center', va='center', fontsize=9, fontweight='bold')
+
+        print(f"temps d'éxécution moyen de {fonction_segmentation.__name__} : {round(np.mean(temps_execution),3)} secondes")
+        print("affichage et sauvegarde du graphique")
+
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
+        plt.savefig(f"{DOSSIER_SORTIE}/{DOSSIER_GRAPHES_SEGMENTATION}/{fonction_segmentation.__name__}_{annee}.png", dpi=resolution)
+        plt.show()
+
+    def graphe_scores_zone_mois(fonction_segmentation: Callable[[MaskedArray, int,int], ndarray],
+                    annees: list[int] = [2021, 2022, 2023, 2024],
+                    mean_monthly: bool = True,
+                    resolution: int = 250,
+                    figsize: tuple[int, int] = (16, 14)) -> None:
+        
+        x = np.arange(1, len(annees) * 12 + 1)
+        fig, axes = plt.subplots(8, 1, figsize=figsize, sharex=True)
+
+        for i, zone in enumerate(range(1, 9)):
+            
+            print(f"Zone {zone}/8", end="")
+
+            dir_oasis = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
+            dir_gt = f'./GroundTruth_DYN/Test_zone{zone}/'
+            ax = axes[i]
+            s1, s0 = [], []
+
+            for annee in annees:
+
+                print(f".", end="")
+
+                for mois in range(1, 13):
+                    
+                    date = f"{annee}{mois:02d}"
+                    img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
+                    gt_path = premier_fichier_dossier(f"{dir_gt}*{date}*.tif")
+
+                    if img_path is None or gt_path is None:
+                        continue
+
+                    image = recuperer_image(img_path)
+                    image_gt = image_reference_binaire(recuperer_image(gt_path))
+                    image_seg = fonction_segmentation(image, zone, mois)
+
+                    s1.append(scores_1(image_seg, image_gt))
+                    s0.append(scores_0(image_seg, image_gt))
+
+            print()
+
+            ax.plot(x, s1, marker="o", color="blue", label="moyenne des scores qui tendent vers 1")
+            ax.plot(x, s0, marker="o", color="red", label="moyenne des scores qui tendent vers 0")
+            ax.set_ylim(0, 1)
+            
+            if i == 0:
+                ax.legend(loc="upper right", fontsize=8)
+            
+            annees_str = [str(annee) for annee in annees]
+            annees_positions = [i*12 for i in range(len(annees))]
+
+            ax.set_xticks(annees_positions)
+            ax.set_xticklabels(annees_str, ha="right")
+            ax.set_ylabel(f"Zone {zone}\n", fontsize=9)
+
+
+        fig.suptitle(f"{fonction_segmentation.__name__} — Scores mensuels par zone et par année", y=0.995)
+        plt.tight_layout(rect=[0, 0, 1, 0.98])
+        plt.savefig(f"{DOSSIER_SORTIE}/{DOSSIER_GRAPHES_SCORES}/graphe_scores {fonction_segmentation.__name__}.png", dpi=resolution)
+        plt.show()
+
 
     #image_test = recuperer_images(mean_monthly=True,zone=5,selected_dates=['202407'])[0]
     #test_segmentation(image_test, segmentation_random_forest)
@@ -281,7 +453,7 @@ if __name__ == "__main__":
     # tester la methode des seuils en feature
     # essayer les images colocalisées avec les dates les plus proches 
 
-    #tests_segmentation(segmentation_random_forest,annee=2023)
-    moyenne_scores_annees_zone_mois(segmentation_random_forest, colocated, annees=[2023,2024])
-    #graphe_scores(segmentation_random_forest, annees=[2023,2024])
+    #tests_segmentation_zone_mois(segmentation_random_forest_zone_mois,annee=2021)
+    #moyenne_scores_annees_zone_mois(segmentation_random_forest_zone_mois, colocated, annees=[2021,2022])
+    graphe_scores_zone_mois(segmentation_random_forest_zone_mois, annees=[2021,2022])
 

@@ -163,12 +163,12 @@ if __name__ == "__main__":
     model = load_model(nom_entrainement)
     verify_features(model)
 
-    def segmentation_random_forest(image : MaskedArray, colocated : MaskedArray) -> ndarray:
+    def segmentation_random_forest(image : MaskedArray, zone : int) -> ndarray:
 
-        return predict_segmentation(model, image, colocated)
+        return predict_segmentation(model, image, colocated[zone -1])
     
 
-    def moyenne_scores_annees_zone(fonction_segmentation: Callable[[MaskedArray, MaskedArray], ndarray], colocated : list[MaskedArray], annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
+    def moyenne_scores_annees_zone(fonction_segmentation: Callable[[MaskedArray, int], ndarray], colocated : list[MaskedArray], annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
 
         temps_execution = []
 
@@ -210,7 +210,7 @@ if __name__ == "__main__":
                     image_gt = recuperer_image(gt_path).astype(int)
 
                     start = time.time()
-                    image_seg = fonction_segmentation(image_oasis, colocated[zone - 1])
+                    image_seg = fonction_segmentation(image_oasis, zone)
                     end = time.time()
 
                     temps_execution.append(end - start)

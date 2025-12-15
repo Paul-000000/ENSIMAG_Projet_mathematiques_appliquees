@@ -5,7 +5,6 @@ from typing import Callable
 from numpy import ndarray
 from numpy.ma import MaskedArray
 from skimage.metrics import structural_similarity
-from sklearn.metrics import accuracy_score
 from fonctions_images import *
 
 
@@ -104,15 +103,7 @@ def vraie_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) ->
 
     return float(vrais_positifs / denom)
 
-def score_precision(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) -> float: # 1 signifie parfait
 
-    if image_segmentee_1.shape != image_segmentee_2.shape:
-        return float('nan')
-    
-    ref = image_segmentee_1.astype(int).ravel()
-    seg = image_segmentee_2.astype(int).ravel()
-
-    return float(accuracy_score(ref, seg))
 
 # affichage des scores
 def print_scores(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray):
@@ -124,7 +115,6 @@ def print_scores(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray):
     print(f"Fausse détection : {round(fausse_detection(image_segmentee_1, image_segmentee_2),3)}\n")
 
     print(f"Vraie détection : {round(vraie_detection(image_segmentee_1, image_segmentee_2),3)}")
-    print(f"Score de précision : {round(score_precision(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Corrélation : {round(score_correlation(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Similarité structurelle : {round(similarite_structurelle(image_segmentee_1, image_segmentee_2),3)}")
 
@@ -137,7 +127,6 @@ def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray
     fausse_vals = []
 
     vraie_vals = []
-    accuracy_vals = []
     corr_vals = []
     ssim_vals = []
 
@@ -179,7 +168,6 @@ def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray
                 fausse_vals.append(fausse_detection(image_seg, image_gt))
 
                 vraie_vals.append(vraie_detection(image_seg, image_gt))
-                accuracy_vals.append(score_precision(image_seg, image_gt))
                 corr_vals.append(score_correlation(image_seg, image_gt))
                 ssim_vals.append(similarite_structurelle(image_seg, image_gt))
 
@@ -192,7 +180,6 @@ def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray
         "Différence d'aire\nmoyenne",
         "Fausse détection\nmoyenne",
         "Vraie détection\nmoyenne",
-        "Score de précision\nmoyen",
         "Corrélation\nmoyenne",
         "Similarité structurelle\nmoyenne"
     ]
@@ -202,7 +189,6 @@ def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray
         round(np.nanmean(diff_aire_vals), 3),
         round(np.nanmean(fausse_vals), 3),
         round(np.nanmean(vraie_vals), 3),
-        round(np.nanmean(accuracy_vals), 3),
         round(np.nanmean(corr_vals), 3),
         round(np.nanmean(ssim_vals), 3)
     ]
@@ -211,7 +197,7 @@ def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray
         noms_scores_moyens[i] = noms_scores_moyens[i] + "\n" + str(scores_moyens[i])  
 
     plt.figure(figsize=(18, 7))
-    plt.bar(noms_scores_moyens, scores_moyens, color=['red', 'red', 'red', 'blue', 'blue', 'blue', 'blue', 'blue'])
+    plt.bar(noms_scores_moyens, scores_moyens, color=['red', 'red', 'red', 'blue', 'blue', 'blue', 'blue'])
     plt.ylabel("Score moyen")
     plt.title(f"Scores moyens sur les années {annees}\nTemps d'éxécution moyen : {temps_execution_moyen} secondes")
     plt.savefig(f"{DOSSIER_SORTIE}/{DOSSIER_SCORES}/score {fonction_segmentation.__name__}.png", dpi=150)
@@ -234,7 +220,6 @@ def scores_1(pred, gt):
 
     scores = [
         vraie_detection(pred, gt),
-        score_precision(pred, gt),
         score_correlation(pred, gt),
         similarite_structurelle(pred, gt)
     ]
