@@ -37,6 +37,7 @@ def segmentation_chan_vese_seuil(image: MaskedArray, sigma=2, mu=0.07, lambda1=1
     return image_segmentee
 
 
+
 if __name__ == "__main__": # tests
 
     #image_ref = recuperer_images(zone=2, selected_dates=['202108'])[0]

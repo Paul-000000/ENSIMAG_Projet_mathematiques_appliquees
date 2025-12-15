@@ -1,21 +1,17 @@
 import joblib
 import numpy as np
-from os import listdir
 from scipy.ndimage import gaussian_filter, uniform_filter
 from skimage.exposure import rescale_intensity
 from seuilF import segmentation_seuillage_fixe
 from sklearn.ensemble import RandomForestClassifier
-from fonctions_images import *
-from fonctions_tests import *
+from fonctions_RF import *
 
-
-DOSSIER_ENTRAINEMENT = "modeles RF"
 
 
 def extract_features(image : MaskedArray) -> ndarray:
     
     image_no_nan = image.filled(np.nan)
-    image_no_nan = np.nan_to_num(image_no_nan, nan=0) # np.nanmean(image_no_nan)
+    image_no_nan = np.nan_to_num(image_no_nan, nan=0)
     image_gray = image_no_nan.astype(float)
 
     image_filtered = gaussian_filter(image_gray, sigma=2)
@@ -46,7 +42,7 @@ def train_random_forest(images : list[MaskedArray], masks : list[MaskedArray],  
 
         x = extract_features(img)
 
-        y = mask.filled(0).astype(int).reshape(-1) # classes 0/1
+        y = mask.filled(0).astype(int).reshape(-1)
 
         x_train.append(x)
         y_train.append(y)
@@ -62,7 +58,7 @@ def train_random_forest(images : list[MaskedArray], masks : list[MaskedArray],  
         min_samples_leaf=pixels_min_feuilles,
         random_state=0,
         n_jobs=10,
-        verbose=2 # 2
+        verbose=2
     )
     model.fit(x_train, y_train)
 
@@ -74,12 +70,6 @@ def predict_segmentation(model : RandomForestClassifier , image : MaskedArray) -
     y_pred = model.predict(x)
     
     return y_pred.reshape(image.shape)
-
-def verify_features(model : RandomForestClassifier) -> None:
-
-    for i, imp in enumerate(model.feature_importances_):
-
-        print(f"Importance feature {i+1} : {round(imp,3)}")
 
 def load_training_data(annees : list[int] = [2021]) -> tuple[list[MaskedArray],list[MaskedArray]]:
 
@@ -106,22 +96,6 @@ def load_training_data(annees : list[int] = [2021]) -> tuple[list[MaskedArray],l
 
     return images_x, images_y
 
-def save_model(model : RandomForestClassifier, filemane : str) -> None:
-
-    joblib.dump(model, f"{DOSSIER_SORTIE}/{DOSSIER_ENTRAINEMENT}/{filemane}.pkl")
-
-def load_model(filemane : str) -> RandomForestClassifier:
-
-    return joblib.load(f"{DOSSIER_SORTIE}/{DOSSIER_ENTRAINEMENT}/{filemane}.pkl")
-
-def nb_elements(liste : list[list[list[MaskedArray]]]) -> int :
-    
-    n = 0
-    for l1 in liste :
-        for l2 in l1 :
-            n += len(l2)
-
-    return n
 
 
 if __name__ == "__main__":

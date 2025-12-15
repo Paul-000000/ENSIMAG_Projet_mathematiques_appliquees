@@ -20,6 +20,7 @@ def segmentation_seuillage_fixe(image: MaskedArray, seuil: float = 0.2, sigma: i
     return segmentation_result
 
 
+
 if __name__ == "__main__": # tests
 
     #image_ref = recuperer_images(zone=5, selected_dates=['202102'])[0]
