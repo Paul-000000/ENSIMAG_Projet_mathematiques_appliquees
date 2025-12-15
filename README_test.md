@@ -3,7 +3,7 @@
 ## Équipe 28 — Année 2025
 
 Ce projet s’inscrit dans le cadre du module **Mathématiques Appliquées 1A**.  
-L’objectif est d’étudier et de comparer différentes méthodes de **segmentation d’images**, appliquées à des images de type **OASIS / Mean Monthly**, en s’appuyant sur des **vérités terrain (Ground Truth)** et des **indicateurs quantitatifs de performance**.
+L’objectif est d’étudier et de comparer différentes méthodes de **segmentation d’images**, appliquées à des images **SAR** suivant **l'index OASIS** et les **moyennes mensuelles**, en s’appuyant sur des **vérités terrain (Ground Truth)** et des **indicateurs quantitatifs de performance**.
 
 Les méthodes principales étudiées sont :
 - la **segmentation par Random Forest**,
