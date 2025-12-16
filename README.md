@@ -22,7 +22,7 @@ Les méthodes principales étudiées sont :
 
 - [Structure du dépôt](#structure-du-dépôt)
 - [Modules utilisés](#modules-utilisés)
-- [Scores de performances](#évaluation-des-performances)
+- [Scores de performances](#scores-de-performances)
 - [Utilisation](#utilisation)
 
 ---
@@ -106,7 +106,7 @@ Résultats générés automatiquement par les scripts :
 
 ---
 
-## modules utilisés
+## Modules utilisés
 
 Nous avons principalement utilisé les modules :
 - [scikit-learn](https://scikit-learn.org/)
