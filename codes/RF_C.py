@@ -139,14 +139,11 @@ def tests_segmentation_C(
 
     for x,zone in enumerate(zones):
 
-        print(f"segmentation Zone {zone} ", end="")
         dir = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
         dir_mean_monthly = f"./GroundTruth_DYN/Test_zone{zone}/"
         dir_colocated = f"./NDWI_colocalise_avec_sar/Colocated_Images/Zone{zone}"
 
         for y,m in enumerate(mois):
-            
-            print(f".", end="")
 
             chemin_image = None
             chemin_image_ref = None
@@ -156,6 +153,10 @@ def tests_segmentation_C(
             chemin_image_ref = premier_fichier_dossier(f"{dir_mean_monthly}/*{date}*.tif")
             chemin_colocated = premier_fichier_dossier(f"{dir_colocated}/*{annee}-{m:02d}*")
 
+            plot_oasis = plots[x * 3, y]
+            plot_segmente = plots[x * 3 + 1, y]
+            plot_ref = plots[x * 3 + 2, y]
+            
             if chemin_image is not None and chemin_image_ref is not None and chemin_colocated is not None:
 
                 colocated = recuperer_image(chemin_colocated)
@@ -166,17 +167,8 @@ def tests_segmentation_C(
                 end = time.time()
                 temps_execution.append(end-start)
                 
-                if chemin_image_ref is None :
-                    plot_oasis = plots[x * 2, y]
-                    plot_segmente = plots[x * 2 + 1, y]
-
-                else :
-                    plot_oasis = plots[x * 3, y]
-                    plot_segmente = plots[x * 3 + 1, y]
-                    plot_ref = plots[x * 3 + 2, y]
-
-                    plot_ref.imshow(image_reference_binaire(recuperer_image(chemin_image_ref)), cmap=INDICATEUR_BINAIRE, origin='upper')
-                    plot_ref.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+                plot_ref.imshow(image_reference_binaire(recuperer_image(chemin_image_ref)), cmap=INDICATEUR_BINAIRE, origin='upper')
+                plot_ref.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
                     
                 plot_oasis.imshow(image, cmap=INDICATEUR_OASIS, origin='upper')
                 plot_oasis.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
@@ -184,8 +176,12 @@ def tests_segmentation_C(
                 plot_segmente.imshow(image_segmentee, cmap=INDICATEUR_BINAIRE, origin='upper')
                 plot_segmente.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
             
-        print()
+            else:
+                plot_oasis.axis("off")
+                plot_segmente.axis("off")
+                plot_ref.axis("off")
 
+            
     dx = len(zones)
     for x,zone in enumerate(zones):    
         fig.text(0.02, 0.94 * (1 - (x / dx) - (1 / (2 * dx))), f"Zone {zone}", ha='center', va='center', rotation='vertical', fontsize=9, fontweight='bold')
@@ -303,8 +299,7 @@ def moyenne_scores_annees_C(
 
 if __name__ == "__main__":
 
-    images, masks, colocated = load_data()
-    entrainer_modele("modele RF C 2024", zones=np.arange(5,9), mois=np.arange(1,13))
+    #entrainer_modele("modele RF C 2024", zones=np.arange(5,9), mois=np.arange(1,13))
 
 
     modele = load_model("modele RF C 2024")
