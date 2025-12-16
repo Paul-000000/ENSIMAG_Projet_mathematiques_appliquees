@@ -35,7 +35,14 @@ def extract_features(image : MaskedArray, colocated : MaskedArray) -> ndarray:
 
     return features.reshape(-1, features.shape[-1])
 
-def train_random_forest(images : list[list[MaskedArray]], masks : list[list[MaskedArray]], colocated : list[MaskedArray], nb_arbres : int = 20, profondeur_max_arbre : int = 10, pixels_min_feuilles : int = 1) -> RandomForestClassifier:
+def train_random_forest(
+    images : list[list[MaskedArray]],
+    masks : list[list[MaskedArray]],
+    colocated : list[MaskedArray],
+    nb_arbres : int = 20,
+    profondeur_max_arbre : int = 10,
+    pixels_min_feuilles : int = 1,
+    nb_threads : int = 8) -> RandomForestClassifier:
 
     x_train = []
     y_train = []
@@ -59,7 +66,7 @@ def train_random_forest(images : list[list[MaskedArray]], masks : list[list[Mask
         max_depth=profondeur_max_arbre,
         min_samples_leaf=pixels_min_feuilles,
         random_state=0,
-        n_jobs=10,
+        n_jobs=nb_threads,
         verbose=2
     )
     model.fit(x_train, y_train)
@@ -128,7 +135,7 @@ def entrainer_modele(colocated : list, nom : str, annees : list[int] = [2023,202
     save_model(modele, nom)
 
 
-def segmentation_random_forest_Z(image : MaskedArray, modele : RandomForestClassifier, colocated : list, zone : int, mois : int = -1) -> ndarray:
+def segmentation_random_forest_Z(image : MaskedArray, modele : RandomForestClassifier, colocated : list, zone : int, *args) -> ndarray:
 
         return predict_segmentation(modele, image, colocated[zone -1])
 

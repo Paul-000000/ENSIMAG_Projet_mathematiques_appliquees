@@ -38,7 +38,14 @@ def extract_features(image : MaskedArray, colocated : MaskedArray, mois : int, z
 
     return features.reshape(-1, features.shape[-1])
 
-def train_random_forest(images : list[list[list[MaskedArray]]], masks : list[list[list[MaskedArray]]], colocated : list[list[MaskedArray]], nb_arbres : int = 20, profondeur_max_arbre : int = 10, pixels_min_feuilles : int = 1) -> RandomForestClassifier:
+def train_random_forest(
+    images : list[list[list[MaskedArray]]],
+    masks : list[list[list[MaskedArray]]],
+    colocated : list[list[MaskedArray]],
+    nb_arbres : int = 20,
+    profondeur_max_arbre : int = 10,
+    pixels_min_feuilles : int = 1,
+    nb_threads : int = 8) -> RandomForestClassifier:
 
     x_train = []
     y_train = []
@@ -65,7 +72,7 @@ def train_random_forest(images : list[list[list[MaskedArray]]], masks : list[lis
         max_depth=profondeur_max_arbre,
         min_samples_leaf=pixels_min_feuilles,
         random_state=0,
-        n_jobs=10,
+        n_jobs=nb_threads,
         verbose=2
     )
     model.fit(x_train, y_train)
@@ -159,7 +166,7 @@ def entrainer_modele(colocated : list, nom : str, annees : list[int] = [2023,202
     save_model(modele, nom)
 
 
-def segmentation_random_forest_ZM2(image : MaskedArray, modele : RandomForestClassifier, colocated : list, zone : int, mois : int) -> ndarray:
+def segmentation_random_forest_ZM(image : MaskedArray, modele : RandomForestClassifier, colocated : list, zone : int, mois : int) -> ndarray:
 
         return predict_segmentation(modele, image, colocated[zone -1][mois -1], mois, zone)
 
@@ -174,6 +181,6 @@ if __name__ == "__main__":
     verify_features(modele)
     
 
-    tests_segmentation_ZM(segmentation_random_forest_ZM2, modele, colocated, annee=2021)
-    moyenne_scores_annees_ZM(segmentation_random_forest_ZM2, modele, colocated, annees=[2021,2022])
-    graphe_scores_ZM(segmentation_random_forest_ZM2, modele, colocated, annees=[2021,2022])
+    tests_segmentation_ZM(segmentation_random_forest_ZM, modele, colocated, annee=2021)
+    moyenne_scores_annees_ZM(segmentation_random_forest_ZM, modele, colocated, annees=[2021,2022])
+    graphe_scores_ZM(segmentation_random_forest_ZM, modele, colocated, annees=[2021,2022])

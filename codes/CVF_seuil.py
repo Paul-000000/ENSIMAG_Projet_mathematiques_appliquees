@@ -7,7 +7,14 @@ from fonctions_images import *
 from fonctions_tests import *
 
 
-def segmentation_chan_vese_seuil(image: MaskedArray, sigma=2, mu=0.07, lambda1=1, lambda2=1, max_num_iter=200, tol=5e-4) -> ndarray:
+def segmentation_chan_vese_seuil(
+    image: MaskedArray,
+    sigma : int = 2,
+    mu : float = 0.07,
+    lambda1 : float = 1,
+    lambda2 : float = 1,
+    max_num_iter : int = 200,
+    tol : float = 5e-4) -> ndarray:
     
     image_no_nan = image.filled(np.nan)
     image_no_nan = np.nan_to_num(image_no_nan, nan=np.nanmean(image_no_nan))

@@ -120,7 +120,7 @@ def tests_segmentation_ZM(
     plt.show()
 
 def moyenne_scores_annees_ZM(
-        fonction_segmentation: Callable[[MaskedArray], ndarray],
+        fonction_segmentation: Callable[[MaskedArray, RandomForestClassifier, list, int, int], ndarray],
         modele : RandomForestClassifier,
         colocated : list = [],
         annees: list[int] = [2021, 2022, 2023, 2024],
@@ -213,7 +213,7 @@ def moyenne_scores_annees_ZM(
     plt.show()
 
 def graphe_scores_ZM(
-        fonction_segmentation: Callable[[MaskedArray], ndarray],
+        fonction_segmentation: Callable[[MaskedArray, RandomForestClassifier, list, int, int], ndarray],
         modele : RandomForestClassifier,
         colocated : list = [],
         zones : list[int] = np.arange(1,9),
