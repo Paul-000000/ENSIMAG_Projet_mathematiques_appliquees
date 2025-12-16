@@ -95,14 +95,14 @@ def load_training_data(annees : list[int] = [2021]) -> tuple[list[MaskedArray],l
 
     return images_x, images_y
 
-def entrainer_modele(nom : str, annees : list[int] = [2023,2024], nb_arbres : int = 20, profondeur_max_arbre : int = 10, pixels_min_feuilles : int = 1) -> None:
+def entrainer_modele(nom : str, annees : list[int] = [2023,2024], nb_arbres : int = 20, profondeur_max_arbre : int = 10, pixels_min_feuilles : int = 1, nb_threads : int = 8) -> None:
 
     images, masks = load_training_data(annees=annees)
 
     print(f"images d'entraînement : {nb_elements(images)}")
 
     start = time.time()
-    modele = train_random_forest(images, masks, nb_arbres=nb_arbres, profondeur_max_arbre=profondeur_max_arbre, pixels_min_feuilles=pixels_min_feuilles)
+    modele = train_random_forest(images, masks, nb_arbres=nb_arbres, profondeur_max_arbre=profondeur_max_arbre, pixels_min_feuilles=pixels_min_feuilles, nb_threads=nb_threads)
     end=time.time()
 
     print(f"temps d'entrainement {round(end-start,3)} secondes")

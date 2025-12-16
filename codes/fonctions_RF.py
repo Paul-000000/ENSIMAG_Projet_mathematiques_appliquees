@@ -80,7 +80,7 @@ def tests_segmentation_ZM(
             image = recuperer_image(chemin_image)
 
             start = time.time()
-            image_segmentee = fonction_segmentation(image, modele, colocated, zone, mois)
+            image_segmentee = fonction_segmentation(image, modele, colocated, zone, m)
             end = time.time()
             temps_execution.append(end-start)
             
@@ -165,7 +165,7 @@ def moyenne_scores_annees_ZM(
                 image_gt = recuperer_image(gt_path).astype(int)
 
                 start = time.time()
-                image_seg = fonction_segmentation(image_oasis, modele, colocated, zone, mois)
+                image_seg = fonction_segmentation(image_oasis, modele, colocated, zone, m)
                 end = time.time()
 
                 temps_execution.append(end - start)
@@ -250,7 +250,7 @@ def graphe_scores_ZM(
 
                 image = recuperer_image(img_path)
                 image_gt = image_reference_binaire(recuperer_image(gt_path))
-                image_seg = fonction_segmentation(image, modele, colocated, zone, mois)
+                image_seg = fonction_segmentation(image, modele, colocated, zone, m)
 
                 s1.append(scores_1(image_seg, image_gt))
                 s0.append(scores_0(image_seg, image_gt))
