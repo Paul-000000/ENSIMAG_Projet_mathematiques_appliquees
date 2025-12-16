@@ -8,7 +8,20 @@ from numpy.ma import MaskedArray
 DOSSIER_SORTIE = "resultats"
 INDICATEUR_OASIS = LinearSegmentedColormap.from_list('mycmap', ['white','gray','blue', 'magenta','red'])
 INDICATEUR_BINAIRE = ListedColormap(['white', 'blue'])
-
+MOIS_ANNEE = [
+        "Janvier",
+        "Février",
+        "Mars",
+        "Avril",
+        "Mai",
+        "Juin",
+        "Juillet",
+        "Août",
+        "Septembre",
+        "Octobre",
+        "Novembre",
+        "Décembre"
+    ]
 
 # récupération d'images au format tif
 def recuperer_images(mean_monthly : bool = True, zone : int = 2, selected_dates : list[str] = ['20210816', '20210828']) -> list[tuple[MaskedArray, MaskedArray | None]]:

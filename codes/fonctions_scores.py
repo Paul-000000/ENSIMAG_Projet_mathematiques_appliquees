@@ -103,6 +103,17 @@ def vraie_detection(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray) ->
 
     return float(vrais_positifs / denom)
 
+def affichage_liste(liste : list) -> str:
+
+    if len(liste) == 0:
+        return ""
+    
+    s = ""
+    for i in range(len(liste) -1):
+        s += str(liste[i]) + ", "
+
+    s += str(liste[len(liste) -1]) 
+    return s
 
 
 # affichage des scores
@@ -118,7 +129,7 @@ def print_scores(image_segmentee_1 : ndarray, image_segmentee_2 : ndarray):
     print(f"Corrélation : {round(score_correlation(image_segmentee_1, image_segmentee_2),3)}")
     print(f"Similarité structurelle : {round(similarite_structurelle(image_segmentee_1, image_segmentee_2),3)}")
 
-def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray], annees: list[int] = [2021, 2022, 2023, 2024]) -> None:
+def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray], annees: list[int] = [2021, 2022, 2023, 2024], mois : list[int] = np.arange(1,13), zones : list[int] = np.arange(1,9)) -> None:
 
     temps_execution = []
 
@@ -134,16 +145,16 @@ def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray
 
         print(f"Année {annee} ", end="")
 
-        for zone in range(1, 9):
+        for zone in zones:
 
             print(f".", end="")
 
             dir_oasis = f'./Data/Test_zone{zone}/STATS/MeanMonthly/'
             dir_gt = f'./GroundTruth_DYN/Test_zone{zone}/'
 
-            for mois in range(1, 13):
+            for m in mois:
 
-                date = f"{annee}{mois:02d}"
+                date = f"{annee}{m:02d}"
                 img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
 
                 if img_path is None:
@@ -197,9 +208,9 @@ def moyenne_scores_annees(fonction_segmentation: Callable[[MaskedArray], ndarray
         noms_scores_moyens[i] = noms_scores_moyens[i] + "\n" + str(scores_moyens[i])  
 
     plt.figure(figsize=(18, 7))
-    plt.bar(noms_scores_moyens, scores_moyens, color=['red', 'red', 'red', 'blue', 'blue', 'blue', 'blue'])
+    plt.bar(noms_scores_moyens, scores_moyens, color=['red', 'red', 'red', 'blue', 'blue', 'blue'])
     plt.ylabel("Score moyen")
-    plt.title(f"Scores moyens sur les années {annees}\nTemps d'éxécution moyen : {temps_execution_moyen} secondes")
+    plt.title(f"Scores moyens sur les années {affichage_liste(annees)}\nmois de {affichage_liste([MOIS_ANNEE[m - 1] for m in mois])}\ndans les zones {affichage_liste(zones)}\nTemps d'éxécution moyen : {temps_execution_moyen} secondes")
     plt.savefig(f"{DOSSIER_SORTIE}/{DOSSIER_SCORES}/score {fonction_segmentation.__name__}.png", dpi=150)
     plt.ylim(0, 1)
     plt.tight_layout()
@@ -227,17 +238,19 @@ def scores_1(pred, gt):
     return np.nanmean(scores)
 
 def graphe_scores(fonction_segmentation: Callable[[MaskedArray], ndarray],
+                  zones : list[int] = np.arange(1,9),
+                  mois : list[int] = np.arange(1,13),
                   annees: list[int] = [2021, 2022, 2023, 2024],
                   mean_monthly: bool = True,
                   resolution: int = 250,
                   figsize: tuple[int, int] = (16, 14)) -> None:
     
-    x = np.arange(1, len(annees) * 12 + 1)
-    fig, axes = plt.subplots(8, 1, figsize=figsize, sharex=True)
+    x = np.arange(len(annees) * len(mois))
+    fig, axes = plt.subplots(len(zones), 1, figsize=figsize, sharex=True)
 
-    for i, zone in enumerate(range(1, 9)):
+    for i, zone in enumerate(zones):
         
-        print(f"Zone {zone}/8", end="")
+        print(f"Zone {zone}", end="")
 
         dir_oasis = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
         dir_gt = f'./GroundTruth_DYN/Test_zone{zone}/'
@@ -248,9 +261,9 @@ def graphe_scores(fonction_segmentation: Callable[[MaskedArray], ndarray],
 
             print(f".", end="")
 
-            for mois in range(1, 13):
+            for m in mois:
                 
-                date = f"{annee}{mois:02d}"
+                date = f"{annee}{m:02d}"
                 img_path = premier_fichier_dossier(f"{dir_oasis}*{date}*.tif")
                 gt_path = premier_fichier_dossier(f"{dir_gt}*{date}*.tif")
 
@@ -273,12 +286,20 @@ def graphe_scores(fonction_segmentation: Callable[[MaskedArray], ndarray],
         if i == 0:
             ax.legend(loc="upper right", fontsize=8)
         
-        annees_str = [str(annee) for annee in annees]
-        annees_positions = [i*12 for i in range(len(annees))]
+        elif i == (len(zones) -1):
 
-        ax.set_xticks(annees_positions)
-        ax.set_xticklabels(annees_str, ha="right")
-        ax.set_ylabel(f"Zone {zone}\n", fontsize=9)
+            x_str = []
+            for annee in annees:
+            
+                for m in mois:
+                    x_str.append(f"{MOIS_ANNEE[m - 1]} {annee}")
+
+            x_positions = [j for j in range(len(annees) * len(mois))]
+
+            ax.set_xticks(x_positions)
+            ax.set_xticklabels(x_str, ha="right", rotation = 45)
+        
+        ax.set_ylabel(f"Zone {zone}\n", fontsize=9)    
 
 
     fig.suptitle(f"{fonction_segmentation.__name__} — Scores mensuels par zone et par année", y=0.995)
@@ -301,5 +322,6 @@ if __name__ == "__main__": # tests
     image_segmentee = segmentation_test(image_ref)
 
 
-    moyenne_scores_annees(segmentation_test)
-    #graphe_scores(segmentation_test)
+    #moyenne_scores_annees(segmentation_test,annees=[2024,2021,2022],zones=[4,1,2],mois=[5,2,11])
+    #graphe_scores(segmentation_test,annees=[2024,2021,2022],zones=[4,1,2],mois=[5,2,11])
+    graphe_scores(segmentation_test)

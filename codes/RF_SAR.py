@@ -117,7 +117,7 @@ def segmentation_random_forest_SAR(image : MaskedArray, modele : RandomForestCla
 
 if __name__ == "__main__":
 
-    entrainer_modele("modele RF SAR 2023-2024")
+    #entrainer_modele("modele RF SAR 2023-2024")
     
 
     modele = load_model("modele RF SAR 2023-2024")

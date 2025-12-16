@@ -51,47 +51,32 @@ def test_segmentation(image_ref : tuple[MaskedArray, MaskedArray | None], foncti
     plt.tight_layout()
     plt.show()
 
-def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray], annee : int = 2021, mean_monthly : bool = True, resolution : int = 300) -> None:   
+def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray], annee : int = 2021, mois : list[int] = np.arange(1,13), zones : list[int] = np.arange(1,9), mean_monthly : bool = True, resolution : int = 300) -> None:   
 
     if mean_monthly :
-        fig, plots = plt.subplots(24,12,figsize=(10, 14))
+        fig, plots = plt.subplots(3 * len(zones),len(mois),figsize=(10, 14))
 
     else :
-        fig, plots = plt.subplots(16,12,figsize=(12, 8))
+        fig, plots = plt.subplots(2 * len(zones),len(mois),figsize=(12, 8))
     
-    mois_annee = [
-        "Janvier",
-        "Février",
-        "Mars",
-        "Avril",
-        "Mai",
-        "Juin",
-        "Juillet",
-        "Août",
-        "Septembre",
-        "Octobre",
-        "Novembre",
-        "Décembre"
-    ]
-
-    plt.suptitle(f"Segmentation des Images pour l'Année {annee}", fontsize=16, fontweight='bold')
+    plt.suptitle(f"Segmentation des Images pour l'Année {annee}\nimage non segmentée, image segmentée, image de référence", fontsize=14, fontweight='bold')
     temps_execution = []
 
-    for zone in range(1,9):
+    for x,zone in enumerate(zones):
 
-        print(f"segmentation Zone {zone}/8 ", end="")
+        print(f"segmentation Zone {zone} ", end="")
         dir = f'./Data/Test_zone{zone}/{"STATS/MeanMonthly" if mean_monthly else "OASIS"}/'
 
         if mean_monthly :
             dir_mean_monthly = f"./GroundTruth_DYN/Test_zone{zone}/"
 
-        for mois in range(1,13):
+        for y,m in enumerate(mois):
             
             print(f".", end="")
 
             chemin_image = None
             chemin_image_ref = None
-            date = f"{annee}{mois:02d}"
+            date = f"{annee}{m:02d}"
             chemin_image = premier_fichier_dossier(f"{dir}*{date}*.tif")
             
             if mean_monthly :
@@ -106,13 +91,13 @@ def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray],
             temps_execution.append(end-start)
             
             if chemin_image_ref is None :
-                plot_oasis = plots[(zone-1) * 2, mois-1]
-                plot_segmente = plots[(zone-1) * 2 + 1, mois-1]
+                plot_oasis = plots[x * 2, y]
+                plot_segmente = plots[x * 2 + 1, y]
 
             else :
-                plot_oasis = plots[(zone-1) * 3, mois-1]
-                plot_segmente = plots[(zone-1) * 3 + 1, mois-1]
-                plot_ref = plots[(zone-1) * 3 + 2, mois-1]
+                plot_oasis = plots[x * 3, y]
+                plot_segmente = plots[x * 3 + 1, y]
+                plot_ref = plots[x * 3 + 2, y]
 
                 plot_ref.imshow(image_reference_binaire(recuperer_image(chemin_image_ref)), cmap=INDICATEUR_BINAIRE, origin='upper')
                 plot_ref.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
@@ -125,11 +110,13 @@ def tests_segmentation(fonction_segmentation : Callable[[MaskedArray], ndarray],
             
         print()
 
-    for zone in range(1,9):    
-        fig.text(0.02, 0.97 - (zone / 8) * 0.9, f"Zone {zone}", ha='center', va='center', rotation='vertical', fontsize=9, fontweight='bold')
+    dx = len(zones)
+    for x,zone in enumerate(zones):    
+        fig.text(0.02, 0.94 * (1 - (x / dx) - (1 / (2 * dx))), f"Zone {zone}", ha='center', va='center', rotation='vertical', fontsize=9, fontweight='bold')
     
-    for mois in range(1,13):
-        fig.text((mois / 12) * 0.98 -0.025, 0.93, f"{mois_annee[mois - 1]}", ha='center', va='center', fontsize=9, fontweight='bold')
+    dy = len(mois)
+    for y,m in enumerate(mois):
+        fig.text((y / dy) + (1 / (2 * dy)), 0.925, f"{MOIS_ANNEE[m - 1]}", ha='center', va='center', fontsize=9, fontweight='bold')
 
     print(f"temps d'éxécution moyen de {fonction_segmentation.__name__} : {round(np.mean(temps_execution),3)} secondes")
     print("affichage et sauvegarde du graphique")
@@ -153,5 +140,6 @@ if __name__ == "__main__": # tests
     image_ref = recuperer_images(zone = 2, selected_dates=['20210816'])[0]
     image_segmentee = segmentation_test(image_ref)
 
-    test_segmentation(image_ref, segmentation_test)
+    #test_segmentation(image_ref, segmentation_test)
     tests_segmentation(segmentation_test)
+    tests_segmentation(segmentation_test,zones=[4,1,2],mois=[5,2,11])
