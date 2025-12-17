@@ -153,3 +153,104 @@ L’essentiel du travail se concentre ensuite sur une approche d’apprentissage
 Les données utilisées pour la segmentation sont des moyennes mensuelles des images SAR du satellite Sentinel‑1 (résolution de 20m), dont les caractéristiques suivent l’indice OASIS sur la période 2021–2024. Nous avons également utilisé une superposition entre les images optiques NDWI et les images SAR pour l’année 2024. Enfin, en l’absence de véritables images terrain, des images segmentées avec une méthode plus avancée, testée par les professeurs, nous ont été fournies afin de calculer les différents métriques et d’entraîner les modèles.
 
 Les expérimentations sont réalisées sur une zone d’étude située dans le secteur de la Bérarde, qui a été marquée en 2024 par la vidange d’un lac supraglaciaire du glacier de Bonne Pierre. Ce cas d’étude réel et complexe constitue un contexte pertinent pour évaluer la robustesse de la méthode proposée.
+\section{Méthodes explorées}
+Comme dans la majorité des méthodes de segmentation, une étape de filtrage est nécessaire afin de réduire le bruit présent dans les images.
+
+Nous avons choisi d’appliquer un filtre gaussien simple, dont le principe est de remplacer la valeur d’un pixel par une moyenne pondérée des pixels voisins, les poids dépendant de la distance par rapport au pixel central. Le paramètre $\sigma$ du filtre gaussien a été fixé à 2. Ce choix permet de réduire efficacement le bruit tout en préservant les contours des lacs, lesquels représentent généralement une portion relativement réduite de l’image. Un $\sigma$ trop élevé risquerait en effet de lisser excessivement les contours et de dégrader la précision de la segmentation. Le filtrage gaussien a été implémenté à l’aide de la fonction dédiée du module scipy.ndimage.
+
+
+
+\subsection{Seuil fixe avec filtrage gaussien}
+La méthode du seuil fixe est l’une des méthodes de segmentation les plus simples. Elle consiste à définir un seuil à partir duquel un pixel est classé soit comme appartenant à un lac, soit comme non-lac. 
+Dans la littérature, une zone est généralement considérée comme de l’eau lorsque les valeurs de rétrodiffusion SAR sont comprises entre $-20$ et $-10$~dB \cite{rey2022}. Toutefois, dans notre cas, les images utilisées suivent l’indice OASIS. Par conséquent, le seuil a été fixé empiriquement à la valeur 0.2, après plusieurs tests exploratoires visant à obtenir une séparation satisfaisante entre les zones d’eau et les autres surfaces.
+
+Après des tests réalisés sur plusieurs zones d’étude, la méthode du seuil fixe a montré des résultats satisfaisants dans les zones dites faciles (zones 2 et 5). En revanche, cette approche échoue largement dans les zones plus complexes, notamment celles contenant des glaciers. Cette dégradation des performances s’explique par le fait que le seuillage conduit à une sur-segmentation des zones de neige humide, qui sont alors confondues avec les surfaces lacustres. De plus, cette méthode ne prend pas en compte le contexte spatial, chaque pixel étant traité indépendamment de ses voisins, ce qui la rend particulièrement sensible au bruit et aux variations locales d’intensité.
+\subsection{Chan–Vese}
+
+
+La méthode de \textit{Chan--Vese} est une approche de segmentation par évolution de contour visant à séparer une image en deux régions aussi homogènes que possible. Elle repose sur la minimisation d’une fonctionnelle d’énergie qui dépend à la fois de la régularité du contour et de l’homogénéité des régions qu’il délimite. Cette fonctionnelle s’écrit :
+
+$$
+\begin{aligned}
+E(C, c_1, c_2) =\;&
+\mu \cdot \mathrm{Length}(C)
++ \nu \cdot \mathrm{Area}(\mathrm{inside}(C)) + \lambda_1 \int_{\mathrm{inside}(C)} 
+\lvert u_0(x,y) - c_1 \rvert^2 \, dx\,dy \\
+&+ \lambda_2 \int_{\mathrm{outside}(C)} 
+\lvert u_0(x,y) - c_2 \rvert^2 \, dx\,dy
+\end{aligned}
+$$
+
+
+où $C$ désigne le contour recherché, $u_0(x,y)$ l’intensité du pixel de coordonnées $(x,y)$, et $c_1$ et $c_2$ les moyennes des intensités respectivement à l’intérieur et à l’extérieur du contour. Les paramètres $\lambda_1, \lambda_2, \mu > 0$ contrôlent l’importance relative des différents termes de l’énergie, tandis que $\nu \in \mathbb{R}$ agit comme un terme de pondération de l’aire. La minimisation de cette fonctionnelle est réalisée de manière itérative, généralement à l’aide d’une descente de gradient dans le cadre des méthodes de \textit{level-set}. \cite{guiot2023segmentation}.
+
+Le paramètre $\mu$ a été choisi égal à $0{,}07$. Ce choix s’explique par la nature des lacs, qui occupent généralement une faible portion de l’image. Une valeur faible de $\mu$ permet de limiter la régularisation du contour et de préserver les détails fins des frontières des lacs. Les paramètres $\lambda_1$ et $\lambda_2$ ont été fixés à $1$, afin de donner un poids équivalent aux régions situées à l’intérieur et à l’extérieur du contour, sans privilégier a priori l’une des deux classes.
+
+Malgré ces ajustements, la méthode de Chan--Vese n’a pas permis d’obtenir des résultats satisfaisants. Elle tend à sur-segmenter les lacs et présente un phénomène d’inversion entre les régions « lac » et « non-lac ». Cette limitation s’explique principalement par le fait que la méthode ne repose que sur des critères d’homogénéité d’intensité et ne prend pas en compte la sémantique de la segmentation.
+
+Plusieurs tentatives d’amélioration ont été explorées. Le problème d’inversion entre les régions a été corrigé en s’appuyant sur la moyenne d’intensité des régions segmentées, l’eau présentant généralement une intensité plus élevée. Cette stratégie a permis d’identifier correctement la région correspondant au lac après la segmentation. Par ailleurs, la fonction d’initialisation fournie par la bibliothèque \texttt{scikit-image}, initialement basée sur un damier, a été remplacée par une initialisation issue d’un seuillage fixe avec un seuil de $0{,}2$. Malgré ces ajustements, les performances globales de la méthode sont restées limitées et n’ont pas permis d’obtenir une segmentation satisfaisante.
+
+
+
+\subsection{Random Forest}
+\subsubsection{Principe général de l’algorithme
+}
+Random Forest est un algorithme d’apprentissage automatique supervisé. Il existe deux variantes : l’une utilisée pour la classification et l’autre pour la régression. Dans notre cas d’application, qui est la segmentation d’images, nous nous intéressons uniquement à la classification. L’algorithme repose sur la combinaison de plusieurs arbres de décision, d’où son nom.
+
+On peut donner l’intuition de l’algorithme de la manière suivante : pour chaque arbre de décision, on sélectionne aléatoirement $k$ caractéristiques parmi les $m$ disponibles. À partir de ces caractéristiques, chaque nœud de l’arbre est construit en choisissant le meilleur critère de division, puis est subdivisé en nœuds fils de manière récursive jusqu’à atteindre la profondeur maximale fixée. 
+
+Pour effectuer une prédiction sur de nouvelles données, chaque arbre de la forêt fournit sa propre prédiction. La classe finale est déterminée par un vote majoritaire parmi les prédictions de tous les arbres, ce qui rend le modèle plus robuste et précis que l’utilisation d’un seul arbre de décision.\href{https://www.kaggle.com/code/prashant111/random-forest-classifier-tutorial}{Kaggle}
+
+\subsubsection{Justification du choix}
+Notre choix d’appliquer l’algorithme des forêts aléatoires (\textit{Random Forest}) est motivé par plusieurs raisons. 
+Tout d’abord, cette méthode est reconnue pour sa robustesse, liée à la combinaison d’un grand nombre d’arbres de décision, 
+ce qui permet de réduire significativement les phénomènes de surapprentissage (\textit{overfitting}).
+
+De plus, l’algorithme offre la possibilité d’estimer l’importance de chaque caractéristique, facilitant ainsi l’analyse et la 
+sélection des caractéristiques les plus pertinentes. Cet aspect est particulièrement intéressant dans notre cas, où différentes 
+informations peuvent être intégrées, notamment celles liées à la texture ou à la période d’acquisition des images.
+
+Cette capacité d’enrichissement par de nouvelles caractéristiques constitue un avantage majeur par rapport à d’autres méthodes 
+explorées, telles que le seuillage fixe, qui repose uniquement sur l’intensité des pixels, ou la méthode de Chan--Vese, 
+principalement basée sur l’évolution des contours.
+
+Enfin, le choix de cette approche est également appuyé par les performances rapportées dans l’article \cite{guiot2023segmentation}, 
+où les forêts aléatoires obtiennent des résultats encourageants pour une problématique similaire en télédétection.
+
+\subsubsection{Stratégie d’apprentissage}
+
+Afin d’améliorer la qualité de la segmentation et de la rendre plus flexible, aussi bien pour le suivi des lacs dans des zones déjà connues (sur lesquelles le modèle a été entraîné) que pour l’application à de nouvelles zones, plusieurs modèles basés sur la méthode des forêts aléatoires ont été entraînés. Dans chaque cas, le modèle repose sur la même méthode d’apprentissage, mais utilise des ensembles de caractéristiques différents.
+
+Les paramètres des arbres ont été conservés identiques pour tous les modèles, avec un nombre de 20 arbres et une profondeur maximale fixée à 10. Ce choix représente un compromis entre les performances obtenues et le temps d’entraînement. L’implémentation a été réalisée à l’aide de la bibliothèque \texttt{scikit-learn}.
+
+Le premier modèle, appelé \textbf{RF\_SAR}, repose uniquement sur les images SAR. Les caractéristiques utilisées sont l’intensité du pixel issue de l’image normalisée, un seuillage fixe à $0{,}2$, ainsi qu’une mesure de texture obtenue à partir de la variance locale calculée sur une fenêtre de $20 \times 20$ pixels. Ce modèle a fourni des résultats satisfaisants, en particulier dans les zones dites faciles. Toutefois, ses performances restent proches de celles obtenues par la méthode de seuillage fixe.
+
+Le deuxième modèle intègre, en plus des caractéristiques issues des images SAR, une image colocalisée correspondant à une superposition entre une image optique et une image SAR de la même région. Ce modèle peut être appliqué à des zones sur lesquelles il n’a pas été entraîné, dès lors que l’image colocalisée est disponible, ce qui lui confère une meilleure capacité de généralisation.
+
+Enfin, le dernier modèle, noté \textbf{RF\_ZM}, enrichit le second modèle en intégrant des informations supplémentaires liées au contexte, à savoir le mois d’acquisition et le numéro de la zone. Ce modèle obtient les meilleurs scores, mais il est principalement destiné au suivi des lacs dans des zones sur lesquelles le modèle a été entraîné.
+
+Les résultats détaillés obtenus par ces trois modèles sont présentés et analysés dans le chapitre consacré aux résultats.
+
+\section{Une section} \label{monlabel}
+
+
+
+
+\section{Conclusions}\label{conclusions}
+
+exemple de citation de citation \cite{doe} vers une référence.
+
+Une vraie citation : \cite[Chap. 4]{nist10}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Bibiliography.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bibliographystyle{agsm}  
+\clearpage
+\phantomsection %add a phantom section for the hyperreference linkg
+\addcontentsline{toc}{section}{Bibliographie} %add a chapter to the TOC
+\bibliography{Ref}   %must have a file named Ref.bib
+
+\end{document}
