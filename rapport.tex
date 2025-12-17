@@ -30,6 +30,7 @@
 %pour les url
 \usepackage{url}
 \urlstyle{sf}
+\usepackage{hyperref}
 
 %plusieur colonne dans tableau
 % \multicolumn{nomb_col}{alignement}{contenu}
@@ -126,9 +127,9 @@
 \DeclareMathOperator{\vect}{vect}
 
 
-\title{NOM DU PROJET A REMPLIR}
-\author{NOM DES ETUDIANT(E)S}
-
+\title{Segmentation d’images satellitaires pour la détection des lacs
+en montagne}
+\author{Mohamed Khalil Becharai \\}
 
 \begin{document}
 
@@ -138,35 +139,17 @@
 
 \section{Introduction}
 
-\red{A faire}
+Les lacs d’eau jouent un rôle essentiel dans l’équilibre écologique et hydrologique. Leur suivi est donc indispensable pour de nombreuses applications, notamment la gestion des ressources en eau et la prévention des risques naturels tels que les débordements dans les zones habitées. La délimitation automatique des contours des lacs à partir d’images satellitaires constitue ainsi un enjeu important.
 
-ma super équation
-$$
-\int_0^1xdx=\frac12.
-$$
+Cependant, cette tâche reste complexe en raison des limites propres aux différents types d’images. Les images optiques, comme celles fournies par Sentinel-2, sont sensibles à la présence de nuages, d’ombres et aux variations d’illumination, ce qui complique l’identification fiable des surfaces d’eau. Les images radar SAR issues de Sentinel-1, quant à elles, peuvent présenter des distorsions liées à la géométrie radar, en particulier en terrain montagneux, rendant la segmentation des lacs difficile.
 
+Dans le cadre de ce projet, plusieurs méthodes de segmentation d’images ont d’abord été explorées afin de mieux comprendre les caractéristiques des données et les difficultés liées à la segmentation des surfaces d’eau. Ces méthodes incluent le seuillage fixe associé à un filtrage gaussien ainsi que la méthode de Chan–Vese. Cette phase exploratoire a permis d’identifier les limites des approches purement basées sur l’intensité.
 
-
-\section{Une section} \label{monlabel}
+L’essentiel du travail se concentre ensuite sur une approche d’apprentissage supervisé basée sur la méthode des forêts aléatoires (Random Forest). Plusieurs modèles ont été entraînés , mais avec des ensembles de caractéristiques (features) différents. L’objectif est d’analyser l’influence du choix des caractéristiques, ainsi que de l’intégration du contexte spatial, sur la qualité de la segmentation des surfaces d’eau. Les performances des différents modèles sont évaluées à l’aide de métriques quantitatives.
 
 
 
+\section{Données utilisées}
+Les données utilisées pour la segmentation sont des moyennes mensuelles des images SAR du satellite Sentinel‑1 (résolution de 20m), dont les caractéristiques suivent l’indice OASIS sur la période 2021–2024. Nous avons également utilisé une superposition entre les images optiques NDWI et les images SAR pour l’année 2024. Enfin, en l’absence de véritables images terrain, des images segmentées avec une méthode plus avancée, testée par les professeurs, nous ont été fournies afin de calculer les différents métriques et d’entraîner les modèles.
 
-\section{Conclusions}\label{conclusions}
-
-exemple de citation de citation \cite{doe} vers une référence.
-
-Une vraie citation : \cite[Chap. 4]{nist10}
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%  Bibiliography.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\bibliographystyle{agsm}  
-\clearpage
-\phantomsection %add a phantom section for the hyperreference linkg
-\addcontentsline{toc}{section}{Bibliographie} %add a chapter to the TOC
-\bibliography{Ref}   %must have a file named Ref.bib
-
-\end{document}
+Les expérimentations sont réalisées sur une zone d’étude située dans le secteur de la Bérarde, qui a été marquée en 2024 par la vidange d’un lac supraglaciaire du glacier de Bonne Pierre. Ce cas d’étude réel et complexe constitue un contexte pertinent pour évaluer la robustesse de la méthode proposée.
