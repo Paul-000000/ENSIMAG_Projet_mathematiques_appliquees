@@ -80,17 +80,19 @@ Scripts Python du projet :
   Seconde implémentation de la méthode **Random Forest** à partir des images colocalisées entre SAR et optiques prenant en compte la zone où se situe l'image.
 - **`RF_ZM.py`**
   Implémentation de la méthode **Random Forest** à partir d'images colocalisées prenant en compte la zone et le mois.
+- **`RF_C.py`**
+  Prototype de la méthode **Random Forest** appliqué à des images SAR et à leurs versions colocalisées.  
+  Ce script a été utilisé à des fins de test sur un jeu de données restreint et n’a pas été retenu pour l’analyse finale.
 
 ---
-
-
 
 ### dossier `resultats/`
 Résultats générés automatiquement par les scripts :
 - **`entrainements_RF/`** : modèles Random Forest sauvegardés  
 - **`graphes_scores/`** : graphes d’évaluation des moyennes des scores pour une méthode de segmentation au cours du temps et en fonction des zones
 - **`graphes_segmentation/`** : visualisations des segmentations sur une année 
-- **`scores/`** : affichages des différents scores pour une méthode de segmentation donnée.
+- **`scores/`** : affichages des différents scores pour une méthode de segmentation donnée
+- **`figures_rapport/`** : les figures produites qui ont servi dans la rédaction du rapport
 
 ---
 
