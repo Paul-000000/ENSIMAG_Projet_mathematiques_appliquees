@@ -3,7 +3,7 @@
 Projet réalisé par **l’équipe 28** composée de Mostafa E.J, Obaida E.J, Paul B et Mohamed Khalil B
 
 ## Description
-Ce projet vise la **segmentation automatique de surfaces d’eau** à partir d’images **SAR** suivant **l'indice OASIS**.
+Ce projet vise la **segmentation automatique de surfaces d’eau** à partir d'images colocalisées et d’images **SAR** suivant **l'indice OASIS**.
 
 Plusieurs méthodes de segmentation sont implémentées et comparées sur différentes  
 **zones géographiques**, **mois** et **années**, à l’aide de métriques quantitatives.
@@ -102,8 +102,7 @@ Résultats générés automatiquement par les scripts :
 ---
 
 ### Fichiers principaux
-- **`rapport.tex`** : rapport final du projet (LaTeX)  
-- **`Ref.bib`** : bibliographie  
+- **`rapport_PMA.pdf`** : rapport final du projet
 - **`sujet.pdf`** : sujet officiel du projet
 
 ---
@@ -250,7 +249,7 @@ Nos méthodes de segmentation prennent en paramètre une image **SAR** représen
   Cette seconde implémentation prend en compte également les zones colocalisées en fournissant la zone colocalisée correspondante à celle de l'image au modèle. Ce qui apporte plus de contexte.
 
   ```python
-  def segmentation_random_forest_ZM2(
+  def segmentation_random_forest_ZM(
     image : MaskedArray,
     modele : RandomForestClassifier,
     colocated : list,
